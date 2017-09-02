@@ -3,19 +3,28 @@ package main
 import "math/rand"
 
 type World struct {
-	things []*Thing
-	height int
-	width  int
+	width     int
+	height    int
+	organisms []*Organism
 }
 
-func (w *World) Get(v Vector) (thing *Thing, ok bool) {
-	i := v.X + (v.Y * w.height)
-	if i >= len(w.things) {
-		panic("testing")
+func (w *World) index(v Vector) (i int, ok bool) {
+	i = v.X + (v.Y * w.height)
+	if i <= len(w.organisms) {
+		ok = true
+	}
+	return
+}
+
+func (w *World) Get(vector Vector) (organism *Organism, ok bool) {
+	i, ok := w.index(vector)
+	if !ok {
+		// TODO: figure out if we should crash the program here
+		panic("seeing if this triggers; may just need to fail silently")
 		return
 	}
-	thing = w.things[i]
-	if thing != nil {
+	organism = w.organisms[i]
+	if organism != nil {
 		ok = true
 	}
 	return
@@ -49,10 +58,18 @@ func (w *World) ViewShuffled(origin Vector, distance int) []Vector {
 	return shuffled
 }
 
-func (w *World) EndLifeAt(vector Vector) (ok bool) {
-	thing, ok := w.Get(vector)
+func (w *World) Remove(vector Vector) (ok bool) {
+	i, ok := w.index(vector)
 	if ok {
-		thing.EndLife()
+		w.organisms[i] = nil
+	}
+	return
+}
+
+func (w *World) EndLifeAt(vector Vector) (ok bool) {
+	organism, ok := w.Get(vector)
+	if ok {
+		organism.EndLife()
 		w.Remove(vector)
 	}
 	return

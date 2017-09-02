@@ -1,6 +1,6 @@
 package main
 
-type Thing struct {
+type Organism struct {
 	behaviors []Behavior
 	classes   []Class
 	energy    int
@@ -10,10 +10,18 @@ type Thing struct {
 
 type Class string
 
-func (t *Thing) transfer(energy int) {
-	t.energy += energy
+func (o *Organism) transfer(energy int) {
+	o.energy += energy
 }
 
-func (t *Thing) Biomass() int {
-	return t.size * t.mass
+func (o *Organism) Biomass() int {
+	return o.size * o.mass
+}
+
+func (o *Organism) Alive() bool {
+	return o.energy > 0
+}
+
+func (o *Organism) EndLife() {
+	o.energy = 0
 }

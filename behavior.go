@@ -1,16 +1,16 @@
 package main
 
 type Behavior interface {
-	Init(thing Thing)
+	Init(organism Organism)
 	Act(world World, origin Vector) (energy int)
 }
 
 type baseBehavior struct {
-	thing Thing
+	organism Organism
 }
 
-func (b *baseBehavior) Init(thing Thing) {
-	b.thing = thing
+func (b *baseBehavior) Init(organism Organism) {
+	b.organism = organism
 }
 
 func (b *baseBehavior) Act(world World, origin Vector) int {
@@ -20,7 +20,7 @@ func (b *baseBehavior) Act(world World, origin Vector) int {
 // ---------------------------------------------------------------------
 // Grow
 
-// Grow increases a Thing's energy over time.
+// Grow increases a Organism's energy over time.
 type Grow struct {
 	*baseBehavior
 	Rate int
@@ -28,7 +28,7 @@ type Grow struct {
 
 func (b *Grow) Act(world World, origin Vector) (energy int) {
 	energy = b.Rate
-	b.thing.transfer(energy)
+	b.organism.transfer(energy)
 	return
 }
 
@@ -45,12 +45,12 @@ func (b *Eat) Act(world World, origin Vector) (energy int) {
 
 	for i := range vectors {
 		vector := vectors[i]
-		thing, ok := world.Get(vector)
+		organism, ok := world.Get(vector)
 
-		if ok && b.isEdible(thing) {
-			ok = world.Kill(vector)
+		if ok && b.isEdible(organism) {
+			ok = world.EndLifeAt(vector)
 			if ok {
-				energy = b.consumeBiomass(thing.Biomass())
+				energy = b.consumeBiomass(organism.Biomass())
 			}
 			return
 		}
@@ -58,11 +58,11 @@ func (b *Eat) Act(world World, origin Vector) (energy int) {
 	return
 }
 
-func (b *Eat) isEdible(thing *Thing) bool {
-	for i := range thing.classes {
-		class := thing.classes[i]
+func (b *Eat) isEdible(organism *Organism) bool {
+	for i := range organism.classes {
+		class := organism.classes[i]
 		for j := range b.Diet {
-			subjectClass = b.Diet[j]
+			subjectClass := b.Diet[j]
 			if class == subjectClass {
 				return true
 			}
@@ -72,6 +72,6 @@ func (b *Eat) isEdible(thing *Thing) bool {
 }
 
 func (b *Eat) consumeBiomass(biomass int) (energy int) {
-	b.thing.transfer(biomass)
+	b.organism.transfer(biomass)
 	return biomass
 }
