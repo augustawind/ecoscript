@@ -45,7 +45,7 @@ type Eat struct {
 }
 
 func (b *Eat) Act(world World, origin Vector) (energy int) {
-	var vectors = world.ViewShuffled(origin, 1)
+	var vectors = world.View(origin, 1)
 
 	for i := range vectors {
 		vector := vectors[i]
@@ -58,7 +58,7 @@ func (b *Eat) Act(world World, origin Vector) (energy int) {
 		for j := range orgs {
 			organism := orgs[j]
 			if b.isEdible(organism) {
-				ok = world.KillOrganism(organism, vector)
+				ok := world.KillOrganism(organism, vector)
 				if ok {
 					energy = b.consumeBiomass(organism.Biomass())
 				}
@@ -105,6 +105,7 @@ var directions = []Vector{
 type Move struct {
 	*baseBehavior
 	Delta  Vector
+	Speed  int
 	Effort int
 }
 
@@ -115,18 +116,18 @@ func (b *Move) Init(organism *Organism) {
 
 func (b *Move) randomizeDelta() {
 	i := rand.Intn(len(directions))
-	b.Delta = directions[i]
+	b.Delta = directions[i].Plus(Vector{b.Speed, b.Speed})
 }
 
 func (b *Move) Act(world World, origin Vector) (energy int) {
 	dest := origin.Plus(b.Delta)
 
 	if !world.Walkable(dest) {
-		dest, ok := world.RandWalkable(origin, b.Delta)
+		dest := world.RandWalkable(origin, b.Speed)
 		if !ok {
 			return 0
 		}
-		b.Delta = dest.Minus(origin)
+		Delta = dest.Minus(origin)
 	}
 
 	world.MoveOrganism(b.organism, origin, dest)

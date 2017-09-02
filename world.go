@@ -22,17 +22,27 @@ func (w *World) InBounds(vec Vector) bool {
 
 func (w *World) Walkable(vec Vector) bool {
 	return w.InBounds(vec) && w.GetCell(vec).AllP(func(o *Organism) bool {
-		o.Walkable()
+		return o.Walkable()
 	})
 }
 
-func (w *World) View(origin Vector, distance int) []Vector {
-	n := (2*distance + 1) ^ 2 - 1
+func (w *World) View(origin Vector, radius int) []Vector {
+	vectors := w.View(origin, radius)
+
+	shuffled := make([]Vector, len(vectors))
+	for i, j := range rand.Perm(len(vectors)) {
+		shuffled[i] = vectors[j]
+	}
+	return shuffled
+}
+
+func (w *World) view(origin Vector, radius int) []Vector {
+	n := (2*radius + 1) ^ 2 - 1
 	vectors := make([]Vector, n)
 
 	i := 0
-	for y := -distance; y < distance; y++ {
-		for x := -distance; x < distance; x++ {
+	for y := -radius; y < radius; y++ {
+		for x := -radius; x < radius; x++ {
 			vec := origin.Plus(Vector{x, y})
 			if !vec.Equals(origin) {
 				vectors[i] = vec
@@ -43,22 +53,26 @@ func (w *World) View(origin Vector, distance int) []Vector {
 	return vectors
 }
 
-func (w *World) ViewShuffled(origin Vector, distance int) []Vector {
-	vectors := w.View(origin, distance)
-	n := len(vectors)
-
-	shuffled := make([]Vector, n)
-	for i, j := range rand.Perm(n) {
-		shuffled[i] = vectors[j]
+func (w *World) ViewWalkable(origin Vector, radius int) []Vector {
+	vectors := w.View(origin, radius)
+	walkables := make([]Vector, 0)
+	for i := range vectors {
+		vec := vectors[i]
+		if w.Walkable(vec) {
+			walkables = append(walkables, vec)
+		}
 	}
-	return shuffled
+}
+
+func (w *World) RandWalkable(origin Vector, radius int) Vector {
+	vectors := w.ViewWalkable(origin, radius)
+	idx := rand.Intn(len(vectors))
+	return vectors[idx]
 }
 
 func (w *World) KillOrganism(organism *Organism, vector Vector) (ok bool) {
-	cell, ok := w.GetCell(vector)
-	if ok {
-		ok = cell.Kill(organism)
-	}
+	cell := w.GetCell(vector)
+	ok = cell.Kill(organism)
 	return
 }
 
