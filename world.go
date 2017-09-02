@@ -62,12 +62,26 @@ func (w *World) ViewWalkable(origin Vector, radius int) []Vector {
 			walkables = append(walkables, vec)
 		}
 	}
+	return walkables
 }
 
 func (w *World) RandWalkable(origin Vector, radius int) Vector {
 	vectors := w.ViewWalkable(origin, radius)
 	idx := rand.Intn(len(vectors))
 	return vectors[idx]
+}
+
+func (w *World) MoveOrganism(
+	organism *Organism,
+	source Vector,
+	dest Vector,
+) (ok bool) {
+	oldCell := w.GetCell(source)
+	newCell := w.GetCell(dest)
+
+	newCell.Add(organism)
+	ok = oldCell.Remove(organism)
+	return
 }
 
 func (w *World) KillOrganism(organism *Organism, vector Vector) (ok bool) {
@@ -77,7 +91,7 @@ func (w *World) KillOrganism(organism *Organism, vector Vector) (ok bool) {
 }
 
 func (w *World) getIndex(vec Vector) int {
-	return vector.X + (vector.Y * w.height)
+	return vec.X + (vec.Y * w.height)
 }
 
 // ---------------------------------------------------------------------
@@ -106,6 +120,11 @@ func (c *Cell) Shuffled() []*Organism {
 		shuffled[i] = c.organisms[j]
 	}
 	return shuffled
+}
+
+func (c *Cell) Add(organism *Organism) {
+	c.indexes[organism.id] = len(c.organisms)
+	c.organisms = append(c.organisms, organism)
 }
 
 func (c *Cell) Remove(organism *Organism) (ok bool) {
