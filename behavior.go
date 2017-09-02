@@ -4,7 +4,7 @@ import "math/rand"
 
 type Behavior interface {
 	Init(organism *Organism)
-	Act(world *World, origin Vector) int
+	Act(world *World, origin Vector) (delay int)
 }
 
 type baseBehavior struct {
@@ -13,10 +13,6 @@ type baseBehavior struct {
 
 func (b *baseBehavior) Init(organism *Organism) {
 	b.organism = organism
-}
-
-func (b *baseBehavior) Act(world *World, origin Vector) int {
-	return 0
 }
 
 // ---------------------------------------------------------------------
@@ -29,36 +25,39 @@ type Grow struct {
 }
 
 func (b *Grow) Act(world *World, origin Vector) int {
-	return b.Rate
+	b.organism.Transfer(b.Rate)
+	return 10
 }
 
 // ---------------------------------------------------------------------
 // Behavior: Eat
 
-// Eat attempts to consume an adjacent organism.
-// If successful, the subject gains energy from the consumed organism.
+// Eat attempts to consume an adjacent organism. If successful, the subject
+// gains energy from the consumed organism.
 type Eat struct {
 	*baseBehavior
-	Diet []Class
+	Diet []string
 }
 
 func (b *Eat) Act(world *World, origin Vector) int {
 	var vectors = world.View(origin, 1)
 
 	for i := range vectors {
-		vector := vectors[i]
-		if !world.InBounds(vector) {
+		vec := vectors[i]
+		if !world.InBounds(vec) {
 			continue
 		}
-		cell := world.GetCell(vector)
+		cell := world.GetCell(vec)
 
 		orgs := cell.Shuffled()
 		for j := range orgs {
 			organism := orgs[j]
 			if b.isEdible(organism) {
-				ok := world.KillOrganism(organism, vector)
+				ok := world.Kill(organism, vec)
 				if ok {
-					return b.consumeBiomass(organism.Biomass())
+					energy := b.consumeBiomass(organism.Biomass())
+					b.organism.Transfer(energy)
+					return 15
 				}
 				return 0
 			}
@@ -81,8 +80,7 @@ func (b *Eat) isEdible(organism *Organism) bool {
 }
 
 func (b *Eat) consumeBiomass(biomass int) int {
-	b.organism.transfer(biomass)
-	return biomass
+	return -biomass
 }
 
 // ---------------------------------------------------------------------
@@ -111,11 +109,6 @@ func (b *Move) Init(organism *Organism) {
 	b.randomizeDelta()
 }
 
-func (b *Move) randomizeDelta() {
-	i := rand.Intn(len(directions))
-	b.Delta = directions[i].Plus(Vector{b.Speed, b.Speed})
-}
-
 func (b *Move) Act(world *World, origin Vector) int {
 	dest := origin.Plus(b.Delta)
 
@@ -127,12 +120,18 @@ func (b *Move) Act(world *World, origin Vector) int {
 	}
 	b.Delta = dest.Minus(origin)
 
-	world.MoveOrganism(b.organism, origin, dest)
-	return -b.Effort
+	world.Move(b.organism, origin, dest)
+	b.organism.Transfer(b.Effort)
+	return 10
+}
+
+func (b *Move) randomizeDelta() {
+	i := rand.Intn(len(directions))
+	b.Delta = directions[i].Plus(Vector{b.Speed, b.Speed})
 }
 
 // ---------------------------------------------------------------------
-// Behavior: Wander
+// Behavior: Wander(Move)
 
 type Wander struct {
 	*Move

@@ -1,5 +1,9 @@
 package main
 
+const (
+	baseActionCost int = -5
+)
+
 type Organism struct {
 	id        OrganismID
 	display   rune
@@ -31,12 +35,29 @@ func (o *Organism) Init() {
 func (o *Organism) Act(world *World, origin Vector) {
 	for i := range o.behaviors {
 		behavior := o.behaviors[i]
-		behavior.Act(world, origin)
+
+		// Apply universal action energy cost.
+		if alive := o.Transfer(baseActionCost); !alive {
+			if ok := world.Kill(o, origin); !ok {
+				// TODO: figure out how to handle ok=false here
+				panic(o)
+			}
+			break
+		}
+
+		// Act out behavior.
+		delay := behavior.Act(world, origin)
+		// ...
 	}
 }
 
 // ---------------------------------------------------------------------
 // Behavior API.
+
+func (o *Organism) Transfer(energy int) bool {
+	o.energy += energy
+	return o.Alive()
+}
 
 func (o *Organism) Display() string {
 	return string(o.display)
@@ -56,11 +77,4 @@ func (o *Organism) Walkable() bool {
 
 func (o *Organism) EndLife() {
 	o.energy = 0
-}
-
-// ---------------------------------------------------------------------
-// Internal API.
-
-func (o *Organism) transfer(energy int) {
-	o.energy += energy
 }
