@@ -1,15 +1,17 @@
 package main
 
+import "math/rand"
+
 type Behavior interface {
 	Init(organism Organism)
 	Act(world World, origin Vector) (energy int)
 }
 
 type baseBehavior struct {
-	organism Organism
+	organism *Organism
 }
 
-func (b *baseBehavior) Init(organism Organism) {
+func (b *baseBehavior) Init(organism *Organism) {
 	b.organism = organism
 }
 
@@ -56,7 +58,7 @@ func (b *Eat) Act(world World, origin Vector) (energy int) {
 		for j := range orgs {
 			organism := orgs[j]
 			if b.isEdible(organism) {
-				ok = world.KillOrganism(vector, organism)
+				ok = world.KillOrganism(organism, vector)
 				if ok {
 					energy = b.consumeBiomass(organism.Biomass())
 				}
@@ -83,4 +85,64 @@ func (b *Eat) isEdible(organism *Organism) bool {
 func (b *Eat) consumeBiomass(biomass int) (energy int) {
 	b.organism.transfer(biomass)
 	return biomass
+}
+
+// ---------------------------------------------------------------------
+// Move
+
+var directions = []Vector{
+	Vector{0, -1},
+	Vector{1, -1},
+	Vector{1, 0},
+	Vector{1, 1},
+	Vector{0, 1},
+	Vector{-1, 1},
+	Vector{-1, 0},
+	Vector{-1, -1},
+}
+
+// TODO: implement this on Organisms and use Behaviors to change the Delta.
+type Move struct {
+	*baseBehavior
+	Delta Vector
+}
+
+func (b *Move) Init(organism *Organism) {
+	b.baseBehavior.Init(organism)
+	b.randomizeDelta()
+}
+
+func (b *Move) randomizeDelta() {
+	i := rand.Intn(len(directions))
+	b.Delta = directions[i]
+}
+
+func (b *Move) Act(world World, origin Vector) (energy int) {
+	dest := origin.Plus(b.Delta)
+
+	if !world.Walkable(dest) {
+		dest, ok := world.RandWalkable(origin, b.Delta)
+		if !ok {
+			return 0
+		}
+		b.Delta = dest.Minus(origin)
+	}
+
+	world.MoveOrganism(b.organism, origin, dest)
+	energy = -b.organism.moveCost
+	b.organism.transfer(energy)
+	return
+}
+
+// ---------------------------------------------------------------------
+// Wander
+
+type Wander struct {
+	*Move
+}
+
+func (b *Wander) Act(world World, origin Vector) (energy int) {
+	energy = b.Move.Act(world, origin)
+	b.randomizeDelta()
+	return
 }

@@ -60,7 +60,7 @@ func (w *World) ViewShuffled(origin Vector, distance int) []Vector {
 	return shuffled
 }
 
-func (w *World) KillOrganism(vector Vector, organism *Organism) (ok bool) {
+func (w *World) KillOrganism(organism *Organism, vector Vector) (ok bool) {
 	cell, ok := w.GetCell(vector)
 	if ok {
 		ok = cell.Kill(organism)

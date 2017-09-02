@@ -8,17 +8,6 @@ func main() {
 	fmt.Println("vim-go")
 }
 
-var Directions = []Vector{
-	Vector{0, -1},
-	Vector{1, -1},
-	Vector{1, 0},
-	Vector{1, 1},
-	Vector{0, 1},
-	Vector{-1, 1},
-	Vector{-1, 0},
-	Vector{-1, -1},
-}
-
 type Vector struct {
 	X int
 	Y int

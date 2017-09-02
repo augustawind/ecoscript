@@ -7,6 +7,7 @@ type Organism struct {
 	energy    int
 	size      int
 	mass      int
+	moveCost  int
 }
 
 type (
