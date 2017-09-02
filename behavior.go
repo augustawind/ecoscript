@@ -44,26 +44,26 @@ func (b *Eat) Act(world World, origin Vector) (energy int) {
 	var vectors = world.ViewShuffled(origin, 1)
 
 	for i := range vectors {
-		target, ok := world.Get(vectors[i])
+		vector := vectors[i]
+		thing, ok := world.Get(vector)
 
-		if ok && b.isEdible(target) {
-			energy = b.transferBiomass(target.Biomass())
-			world.Kill(target)
+		if ok && b.isEdible(thing) {
+			ok = world.Kill(vector)
+			if ok {
+				energy = b.consumeBiomass(thing.Biomass())
+			}
 			return
 		}
 	}
 	return
 }
 
-func (b *Eat) isEdible(target *Thing) bool {
-	var targetClass Class
-	var subjectClass Class
-
-	for i := range target.classes {
-		targetClass = target.classes[i]
+func (b *Eat) isEdible(thing *Thing) bool {
+	for i := range thing.classes {
+		class := thing.classes[i]
 		for j := range b.Diet {
 			subjectClass = b.Diet[j]
-			if targetClass == subjectClass {
+			if class == subjectClass {
 				return true
 			}
 		}
@@ -71,7 +71,7 @@ func (b *Eat) isEdible(target *Thing) bool {
 	return false
 }
 
-func (b *Eat) transferBiomass(biomass int) (energy int) {
+func (b *Eat) consumeBiomass(biomass int) (energy int) {
 	b.thing.transfer(biomass)
 	return biomass
 }

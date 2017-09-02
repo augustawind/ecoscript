@@ -48,3 +48,12 @@ func (w *World) ViewShuffled(origin Vector, distance int) []Vector {
 	}
 	return shuffled
 }
+
+func (w *World) EndLifeAt(vector Vector) (ok bool) {
+	thing, ok := w.Get(vector)
+	if ok {
+		thing.EndLife()
+		w.Remove(vector)
+	}
+	return
+}
