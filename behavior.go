@@ -20,7 +20,7 @@ func (b *baseBehavior) Act(world World, origin Vector) int {
 // ---------------------------------------------------------------------
 // Grow
 
-// Grow increases a Organism's energy over time.
+// Grow increases the subject's energy by its growth rate.
 type Grow struct {
 	*baseBehavior
 	Rate int
@@ -35,6 +35,8 @@ func (b *Grow) Act(world World, origin Vector) (energy int) {
 // ---------------------------------------------------------------------
 // Eat
 
+// Eat attempts to consume an adjacent organism.
+// If successful, the subject gains energy from the consumed organism.
 type Eat struct {
 	*baseBehavior
 	Diet []Class
@@ -45,14 +47,21 @@ func (b *Eat) Act(world World, origin Vector) (energy int) {
 
 	for i := range vectors {
 		vector := vectors[i]
-		organism, ok := world.Get(vector)
+		cell, ok := world.GetCell(vector)
+		if !ok {
+			continue
+		}
 
-		if ok && b.isEdible(organism) {
-			ok = world.EndLifeAt(vector)
-			if ok {
-				energy = b.consumeBiomass(organism.Biomass())
+		orgs := cell.Shuffled()
+		for j := range orgs {
+			organism := orgs[j]
+			if b.isEdible(organism) {
+				ok = world.KillOrganism(vector, organism)
+				if ok {
+					energy = b.consumeBiomass(organism.Biomass())
+				}
+				return
 			}
-			return
 		}
 	}
 	return

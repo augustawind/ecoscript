@@ -1,6 +1,7 @@
 package main
 
 type Organism struct {
+	id        OrganismID
 	behaviors []Behavior
 	classes   []Class
 	energy    int
@@ -8,7 +9,18 @@ type Organism struct {
 	mass      int
 }
 
-type Class string
+type (
+	OrganismID int
+	Class      string
+)
+
+var nextOrganismID OrganismID = 0
+
+func NewOrganism() *Organism {
+	organism := &Organism{id: nextOrganismID}
+	nextOrganismID++
+	return organism
+}
 
 func (o *Organism) transfer(energy int) {
 	o.energy += energy

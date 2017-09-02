@@ -3,30 +3,31 @@ package main
 import "math/rand"
 
 type World struct {
-	width     int
-	height    int
-	organisms []*Organism
+	width  int
+	height int
+	cells  []*Cell
+}
+
+type Cell struct {
+	organisms map[OrganismID]*Organism
 }
 
 func (w *World) index(v Vector) (i int, ok bool) {
 	i = v.X + (v.Y * w.height)
-	if i <= len(w.organisms) {
+	if i <= len(w.cells) {
 		ok = true
 	}
 	return
 }
 
-func (w *World) Get(vector Vector) (organism *Organism, ok bool) {
+func (w *World) GetCell(vector Vector) (cell *Cell, ok bool) {
 	i, ok := w.index(vector)
 	if !ok {
 		// TODO: figure out if we should crash the program here
 		panic("seeing if this triggers; may just need to fail silently")
 		return
 	}
-	organism = w.organisms[i]
-	if organism != nil {
-		ok = true
-	}
+	cell = w.cells[i]
 	return
 }
 
@@ -58,19 +59,45 @@ func (w *World) ViewShuffled(origin Vector, distance int) []Vector {
 	return shuffled
 }
 
-func (w *World) Remove(vector Vector) (ok bool) {
-	i, ok := w.index(vector)
+func (w *World) KillOrganism(vector Vector, organism *Organism) (ok bool) {
+	cell, ok := w.GetCell(vector)
 	if ok {
-		w.organisms[i] = nil
+		ok = cell.Kill(organism)
 	}
 	return
 }
 
-func (w *World) EndLifeAt(vector Vector) (ok bool) {
-	organism, ok := w.Get(vector)
+func (c *Cell) Shuffled() []*Organism {
+	n := len(c.organisms)
+	keys := make([]OrganismID, n)
+
+	i := 0
+	for k := range c.organisms {
+		keys[i] = k
+		i++
+	}
+
+	shuffled := make([]*Organism, n)
+	for i, j := range rand.Perm(n) {
+		shuffled[i] = c.organisms[keys[j]]
+	}
+	return shuffled
+}
+
+func (c *Cell) Remove(organism *Organism) (ok bool) {
+	for id := range c.organisms {
+		if id == organism.id {
+			delete(c.organisms, id)
+			return true
+		}
+	}
+	return false
+}
+
+func (c *Cell) Kill(organism *Organism) (ok bool) {
+	ok = c.Remove(organism)
 	if ok {
 		organism.EndLife()
-		w.Remove(vector)
 	}
 	return
 }
