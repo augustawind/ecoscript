@@ -9,7 +9,8 @@ type World struct {
 }
 
 type Cell struct {
-	organisms map[OrganismID]*Organism
+	indexes   map[OrganismID]int
+	organisms []*Organism
 }
 
 func (w *World) index(v Vector) (i int, ok bool) {
@@ -69,29 +70,28 @@ func (w *World) KillOrganism(vector Vector, organism *Organism) (ok bool) {
 
 func (c *Cell) Shuffled() []*Organism {
 	n := len(c.organisms)
-	keys := make([]OrganismID, n)
-
-	i := 0
-	for k := range c.organisms {
-		keys[i] = k
-		i++
-	}
-
 	shuffled := make([]*Organism, n)
+
 	for i, j := range rand.Perm(n) {
-		shuffled[i] = c.organisms[keys[j]]
+		shuffled[i] = c.organisms[j]
 	}
 	return shuffled
 }
 
 func (c *Cell) Remove(organism *Organism) (ok bool) {
-	for id := range c.organisms {
+	for id, index := range c.indexes {
 		if id == organism.id {
-			delete(c.organisms, id)
+			c.delOrganismByIndex(index)
 			return true
 		}
 	}
 	return false
+}
+
+func (c *Cell) delOrganismByIndex(i int) {
+	copy(c.organisms[i:], c.organisms[i+1:])
+	c.organisms[len(c.organisms)-1] = nil
+	c.organisms = c.organisms[:len(c.organisms)-1]
 }
 
 func (c *Cell) Kill(organism *Organism) (ok bool) {
