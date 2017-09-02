@@ -26,8 +26,9 @@ func (w *World) Walkable(vec Vector) bool {
 	})
 }
 
+// View returns all Vectors in a radius around a given origin in random order.
 func (w *World) View(origin Vector, radius int) []Vector {
-	vectors := w.View(origin, radius)
+	vectors := w.view(origin, radius)
 
 	shuffled := make([]Vector, len(vectors))
 	for i, j := range rand.Perm(len(vectors)) {
@@ -53,6 +54,7 @@ func (w *World) view(origin Vector, radius int) []Vector {
 	return vectors
 }
 
+// ViewWalkable is like View except it only returns walkable tiles.
 func (w *World) ViewWalkable(origin Vector, radius int) []Vector {
 	vectors := w.View(origin, radius)
 	walkables := make([]Vector, 0)
@@ -71,12 +73,14 @@ func (w *World) RandWalkable(origin Vector, radius int) Vector {
 	return vectors[idx]
 }
 
-func (w *World) MoveOrganism(
-	organism *Organism,
-	source Vector,
-	dest Vector,
-) (ok bool) {
-	oldCell := w.GetCell(source)
+func (w *World) Remove(organism *Organism, vec Vector) (ok bool) {
+	cell := w.GetCell(vec)
+	ok = cell.Remove(organism)
+	return
+}
+
+func (w *World) Move(organism *Organism, src Vector, dest Vector) (ok bool) {
+	oldCell := w.GetCell(src)
 	newCell := w.GetCell(dest)
 
 	newCell.Add(organism)
@@ -84,9 +88,12 @@ func (w *World) MoveOrganism(
 	return
 }
 
-func (w *World) KillOrganism(organism *Organism, vector Vector) (ok bool) {
-	cell := w.GetCell(vector)
-	ok = cell.Kill(organism)
+func (w *World) Kill(organism *Organism, vec Vector) (ok bool) {
+	// TODO: implement corpses
+	ok = w.Remove(organism, vec)
+	if ok {
+		organism.EndLife()
+	}
 	return
 }
 
@@ -135,14 +142,6 @@ func (c *Cell) Remove(organism *Organism) (ok bool) {
 		}
 	}
 	return false
-}
-
-func (c *Cell) Kill(organism *Organism) (ok bool) {
-	ok = c.Remove(organism)
-	if ok {
-		organism.EndLife()
-	}
-	return
 }
 
 func (c *Cell) delOrganismByIndex(i int) {
