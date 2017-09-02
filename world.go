@@ -1,61 +1,50 @@
 package main
 
-import "fmt"
+import "math/rand"
 
-func main() {
-	fmt.Println("vim-go")
+type World struct {
+	things []*Thing
+	height int
+	width  int
 }
 
-type Vector struct {
-	X int
-	Y int
-}
-
-func (v Vector) Equals(u Vector) bool {
-	return v.X == u.X && v.Y == u.Y
-}
-
-func (v Vector) Compare(u Vector) int {
-	nV := v.X + v.Y
-	nU := u.X + u.Y
-	if nV < nU {
-		return -1
-	} else if nV > nU {
-		return 1
+func (w *World) Get(v Vector) (thing *Thing, ok bool) {
+	i := v.X + (v.Y * w.height)
+	if i >= len(w.things) {
+		panic("testing")
+		return
 	}
-	return 0
+	thing = w.things[i]
+	if thing != nil {
+		ok = true
+	}
+	return
 }
 
-func (v Vector) Plus(u Vector) Vector {
-	return Vector{v.X + u.X, v.Y + u.Y}
-}
+func (w *World) View(origin Vector, distance int) []Vector {
+	n := (2*distance + 1) ^ 2 - 1
+	vectors := make([]Vector, n)
 
-func (v Vector) Minus(u Vector) Vector {
-	return Vector{v.X - u.X, v.Y - u.Y}
-}
-
-func (v Vector) Map(f func(int) int) Vector {
-	return Vector{f(v.X), f(v.Y)}
-}
-
-func (v Vector) Dir() Vector {
-	return v.Map(func(n int) int {
-		if n > 0 {
-			return 1
-		} else if n < 0 {
-			return -1
+	i := 0
+	for y := -distance; y < distance; y++ {
+		for x := -distance; x < distance; x++ {
+			vec := origin.Plus(Vector{x, y})
+			if !vec.Equals(origin) {
+				vectors[i] = vec
+				i++
+			}
 		}
-		return 0
-	})
+	}
+	return vectors
 }
 
-var Directions = []Vector{
-	Vector{0, -1},
-	Vector{1, -1},
-	Vector{1, 0},
-	Vector{1, 1},
-	Vector{0, 1},
-	Vector{-1, 1},
-	Vector{-1, 0},
-	Vector{-1, -1},
+func (w *World) ViewShuffled(origin Vector, distance int) []Vector {
+	vectors := w.View(origin, distance)
+	n := len(vectors)
+
+	shuffled := make([]Vector, n)
+	for i, j := range rand.Perm(n) {
+		shuffled[i] = vectors[j]
+	}
+	return shuffled
 }
