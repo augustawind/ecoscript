@@ -49,10 +49,10 @@ func (b *Eat) Act(world World, origin Vector) (energy int) {
 
 	for i := range vectors {
 		vector := vectors[i]
-		cell, ok := world.GetCell(vector)
-		if !ok {
+		if !world.InBounds(vector) {
 			continue
 		}
+		cell := world.GetCell(vector)
 
 		orgs := cell.Shuffled()
 		for j := range orgs {
@@ -104,7 +104,8 @@ var directions = []Vector{
 // TODO: implement this on Organisms and use Behaviors to change the Delta.
 type Move struct {
 	*baseBehavior
-	Delta Vector
+	Delta  Vector
+	Effort int
 }
 
 func (b *Move) Init(organism *Organism) {
@@ -129,7 +130,7 @@ func (b *Move) Act(world World, origin Vector) (energy int) {
 	}
 
 	world.MoveOrganism(b.organism, origin, dest)
-	energy = -b.organism.moveCost
+	energy = -b.Effort
 	b.organism.transfer(energy)
 	return
 }

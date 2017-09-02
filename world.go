@@ -2,34 +2,28 @@ package main
 
 import "math/rand"
 
+// ---------------------------------------------------------------------
+// World
+
 type World struct {
 	width  int
 	height int
 	cells  []*Cell
 }
 
-type Cell struct {
-	indexes   map[OrganismID]int
-	organisms []*Organism
+func (w *World) GetCell(vec Vector) *Cell {
+	idx := w.getIndex(vec)
+	return w.cells[idx]
 }
 
-func (w *World) index(v Vector) (i int, ok bool) {
-	i = v.X + (v.Y * w.height)
-	if i <= len(w.cells) {
-		ok = true
-	}
-	return
+func (w *World) InBounds(vec Vector) bool {
+	return w.getIndex(vec) < len(w.cells)
 }
 
-func (w *World) GetCell(vector Vector) (cell *Cell, ok bool) {
-	i, ok := w.index(vector)
-	if !ok {
-		// TODO: figure out if we should crash the program here
-		panic("seeing if this triggers; may just need to fail silently")
-		return
-	}
-	cell = w.cells[i]
-	return
+func (w *World) Walkable(vec Vector) bool {
+	return w.InBounds(vec) && w.GetCell(vec).AllP(func(o *Organism) bool {
+		o.Walkable()
+	})
 }
 
 func (w *World) View(origin Vector, distance int) []Vector {
@@ -68,6 +62,28 @@ func (w *World) KillOrganism(organism *Organism, vector Vector) (ok bool) {
 	return
 }
 
+func (w *World) getIndex(vec Vector) int {
+	return vector.X + (vector.Y * w.height)
+}
+
+// ---------------------------------------------------------------------
+// Cell
+
+type Cell struct {
+	indexes   map[OrganismID]int
+	organisms []*Organism
+}
+
+func (c *Cell) AllP(p func(o *Organism) bool) bool {
+	for i := range c.organisms {
+		organism := c.organisms[i]
+		if !p(organism) {
+			return false
+		}
+	}
+	return true
+}
+
 func (c *Cell) Shuffled() []*Organism {
 	n := len(c.organisms)
 	shuffled := make([]*Organism, n)
@@ -88,16 +104,16 @@ func (c *Cell) Remove(organism *Organism) (ok bool) {
 	return false
 }
 
-func (c *Cell) delOrganismByIndex(i int) {
-	copy(c.organisms[i:], c.organisms[i+1:])
-	c.organisms[len(c.organisms)-1] = nil
-	c.organisms = c.organisms[:len(c.organisms)-1]
-}
-
 func (c *Cell) Kill(organism *Organism) (ok bool) {
 	ok = c.Remove(organism)
 	if ok {
 		organism.EndLife()
 	}
 	return
+}
+
+func (c *Cell) delOrganismByIndex(i int) {
+	copy(c.organisms[i:], c.organisms[i+1:])
+	c.organisms[len(c.organisms)-1] = nil
+	c.organisms = c.organisms[:len(c.organisms)-1]
 }
