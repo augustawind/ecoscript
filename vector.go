@@ -13,27 +13,27 @@ type Vector struct {
 	Y int
 }
 
-func (v Vector) Equals(u Vector) bool {
-	return v.X == u.X && v.Y == u.Y
+func (v Vector) Equals(a Vector) bool {
+	return v.X == a.X && v.Y == a.Y
 }
 
-func (v Vector) Compare(u Vector) int {
-	nV := v.X + v.Y
-	nU := u.X + u.Y
-	if nV < nU {
+func (v Vector) Compare(a Vector) int {
+	sumV := v.X + v.Y
+	sumA := a.X + a.Y
+	if sumV < sumA {
 		return -1
-	} else if nV > nU {
+	} else if sumV > sumA {
 		return 1
 	}
 	return 0
 }
 
-func (v Vector) Plus(u Vector) Vector {
-	return Vector{v.X + u.X, v.Y + u.Y}
+func (v Vector) Plus(a Vector) Vector {
+	return Vector{v.X + a.X, v.Y + a.Y}
 }
 
-func (v Vector) Minus(u Vector) Vector {
-	return Vector{v.X - u.X, v.Y - u.Y}
+func (v Vector) Minus(a Vector) Vector {
+	return Vector{v.X - a.X, v.Y - a.Y}
 }
 
 func (v Vector) Map(f func(int) int) Vector {
