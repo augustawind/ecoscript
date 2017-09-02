@@ -3,8 +3,8 @@ package main
 import "math/rand"
 
 type Behavior interface {
-	Init(organism Organism)
-	Act(world World, origin Vector) (energy int)
+	Init(organism *Organism)
+	Act(world *World, origin Vector) int
 }
 
 type baseBehavior struct {
@@ -15,12 +15,12 @@ func (b *baseBehavior) Init(organism *Organism) {
 	b.organism = organism
 }
 
-func (b *baseBehavior) Act(world World, origin Vector) int {
+func (b *baseBehavior) Act(world *World, origin Vector) int {
 	return 0
 }
 
 // ---------------------------------------------------------------------
-// Grow
+// Behavior: Grow
 
 // Grow increases the subject's energy by its growth rate.
 type Grow struct {
@@ -28,14 +28,12 @@ type Grow struct {
 	Rate int
 }
 
-func (b *Grow) Act(world World, origin Vector) (energy int) {
-	energy = b.Rate
-	b.organism.transfer(energy)
-	return
+func (b *Grow) Act(world *World, origin Vector) int {
+	return b.Rate
 }
 
 // ---------------------------------------------------------------------
-// Eat
+// Behavior: Eat
 
 // Eat attempts to consume an adjacent organism.
 // If successful, the subject gains energy from the consumed organism.
@@ -44,7 +42,7 @@ type Eat struct {
 	Diet []Class
 }
 
-func (b *Eat) Act(world World, origin Vector) (energy int) {
+func (b *Eat) Act(world *World, origin Vector) int {
 	var vectors = world.View(origin, 1)
 
 	for i := range vectors {
@@ -60,13 +58,13 @@ func (b *Eat) Act(world World, origin Vector) (energy int) {
 			if b.isEdible(organism) {
 				ok := world.KillOrganism(organism, vector)
 				if ok {
-					energy = b.consumeBiomass(organism.Biomass())
+					return b.consumeBiomass(organism.Biomass())
 				}
-				return
+				return 0
 			}
 		}
 	}
-	return
+	return 0
 }
 
 func (b *Eat) isEdible(organism *Organism) bool {
@@ -82,13 +80,13 @@ func (b *Eat) isEdible(organism *Organism) bool {
 	return false
 }
 
-func (b *Eat) consumeBiomass(biomass int) (energy int) {
+func (b *Eat) consumeBiomass(biomass int) int {
 	b.organism.transfer(biomass)
 	return biomass
 }
 
 // ---------------------------------------------------------------------
-// Move
+// Behavior: Move
 
 var directions = []Vector{
 	Vector{0, -1},
@@ -101,7 +99,6 @@ var directions = []Vector{
 	Vector{-1, -1},
 }
 
-// TODO: implement this on Organisms and use Behaviors to change the Delta.
 type Move struct {
 	*baseBehavior
 	Delta  Vector
@@ -119,32 +116,29 @@ func (b *Move) randomizeDelta() {
 	b.Delta = directions[i].Plus(Vector{b.Speed, b.Speed})
 }
 
-func (b *Move) Act(world World, origin Vector) (energy int) {
+func (b *Move) Act(world *World, origin Vector) int {
 	dest := origin.Plus(b.Delta)
 
 	if !world.Walkable(dest) {
-		dest := world.RandWalkable(origin, b.Speed)
-		if !ok {
+		dest = world.RandWalkable(origin, b.Speed)
+		if !world.Walkable(dest) {
 			return 0
 		}
-		Delta = dest.Minus(origin)
 	}
+	b.Delta = dest.Minus(origin)
 
 	world.MoveOrganism(b.organism, origin, dest)
-	energy = -b.Effort
-	b.organism.transfer(energy)
-	return
+	return -b.Effort
 }
 
 // ---------------------------------------------------------------------
-// Wander
+// Behavior: Wander
 
 type Wander struct {
 	*Move
 }
 
-func (b *Wander) Act(world World, origin Vector) (energy int) {
-	energy = b.Move.Act(world, origin)
+func (b *Wander) Act(world *World, origin Vector) int {
 	b.randomizeDelta()
-	return
+	return b.Move.Act(world, origin)
 }
