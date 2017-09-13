@@ -2,52 +2,6 @@ package main
 
 import "math/rand"
 
-// Space is a container that has width and height and contains Cells.
-type Space interface {
-	// Width returns the length of the x-axis.
-	Width() int
-
-	// Height returns the length of the y-axis.
-	Height() int
-
-	// InBounds returns true if the given Vector is in bounds.
-	InBounds(vec Vector) bool
-
-	// Cell returns the Cell at the given vector.
-	Cell(vec Vector) *Cell
-
-	// View returns all Vectors that are in-bounds within a radius.
-	View(origin Vector, radius int) []Vector
-
-	// ViewR is like View but randomizes the returned Vectors.
-	ViewR(origin Vector, radius int) []Vector
-
-	// ViewWalkable returns all walkable Vectors within a radius.
-	ViewWalkable(origin Vector, radius int) []Vector
-
-	// ViewWalkableR is like ViewWalkable but randomizes the returned Vectors.
-	ViewWalkableR(origin Vector, radius int) []Vector
-
-	// RandWalkable finds a random walkable Vector within a radius.
-	RandWalkable(origin Vector, radius int) Vector
-
-	// Add attempts to add an Organism at the given Vector.
-	// It returns true if it succeeded or false if it wasn't found.
-	Add(org *Organism, vec Vector) (func(), bool)
-
-	// Remove attempts to remove an Organism at the given Vector.
-	// It returns true if it succeeded or false if it wasn't found.
-	Remove(org *Organism, vec Vector) (func(), bool)
-
-	// Remove attempts to remove and kill an Organism at the given Vector.
-	// It returns true if it succeeded or false if it wasn't found.
-	Kill(org *Organism, vec Vector) (func(), bool)
-
-	// Move attempts to move an Organism from one Vector to another
-	// It returns true if it succeeded or false if it wasn't found.
-	Move(org *Organism, src Vector, dst Vector) (func(), bool)
-}
-
 // ---------------------------------------------------------------------
 // World
 
@@ -105,17 +59,6 @@ func (w *World) InBounds(vec Vector) bool {
 
 func (w *World) Walkable(vec Vector) bool {
 	return w.InBounds(vec) && !w.Cell(vec).Occupied()
-}
-
-func (w *World) FilterWalkable(vectors []Vector) []Vector {
-	walkables := make([]Vector, 0)
-	for i := range vectors {
-		vec := vectors[i]
-		if w.Walkable(vec) {
-			walkables = append(walkables, vec)
-		}
-	}
-	return walkables
 }
 
 func (w *World) View(origin Vector, radius int) []Vector {
