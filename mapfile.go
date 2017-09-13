@@ -19,15 +19,15 @@ type Mapfile struct {
 
 	Atlas struct {
 		Map struct {
-			Raw  string `mapstructure:"raw"`
-			Link string `mapstructure:"link"`
+			Text string `mapstructure:"text"`
+			File string `mapstructure:"file"`
 		} `mapstructure:"map"`
 
 		Legend map[string]string `mapstructure:"legend"`
 	} `mapstructure:"atlas"`
 
 	Ecology struct {
-		Classes []string `mapstructure:"classes"`
+		Classes []Class `mapstructure:"classes"`
 	} `mapstructure:"ecology"`
 
 	Organisms map[string]Organism `mapstructure:"organisms"`
@@ -62,8 +62,8 @@ func ParseMapfile(path string) (mapfile Mapfile) {
 
 func (m Mapfile) Validate() (err error) {
 	var mapText string
-	mapRawGiven := len(m.Atlas.Map.Raw) > 0
-	mapLinkGiven := len(m.Atlas.Map.Link) > 0
+	mapRawGiven := len(m.Atlas.Map.Text) > 0
+	mapLinkGiven := len(m.Atlas.Map.File) > 0
 	if !(mapRawGiven || mapLinkGiven) {
 		return errors.New("one of ``atlas.map.raw`` or ``atlas.map.link`` must be present")
 	}
@@ -71,9 +71,9 @@ func (m Mapfile) Validate() (err error) {
 		return errors.New("``atlas.map.raw`` and ``atlas.map.link`` cannot both be present")
 	}
 	if mapRawGiven {
-		mapText = m.Atlas.Map.Raw
+		mapText = m.Atlas.Map.Text
 	} else {
-		bytes, err := ioutil.ReadFile(m.Atlas.Map.Link)
+		bytes, err := ioutil.ReadFile(m.Atlas.Map.File)
 		if err != nil {
 			return errors.Wrap(err, "error reading ``atlas.map.link``")
 		}
@@ -92,6 +92,11 @@ func (m Mapfile) Validate() (err error) {
 		return errors.New("``organisms`` must have at least one entry")
 	}
 	err = m.validateLegend()
+	if err != nil {
+		return
+	}
+
+	err = m.validateEcology()
 	if err != nil {
 		return
 	}
@@ -119,6 +124,19 @@ func (m Mapfile) validateLegend() error {
 	return nil
 }
 
+func (m Mapfile) validateEcology() error {
+	var result error
+	classes := m.Ecology.Classes
+	if classes != nil && len(classes) > 0 {
+		for _, class := range classes {
+			if err := vStringMinLen(string(class), 2, "classes"); err != nil {
+				result = multierror.Append(result, err)
+			}
+		}
+	}
+	return result
+}
+
 func (m Mapfile) validateOrganisms() error {
 	var result error
 	for _, organism := range m.Organisms {
@@ -134,9 +152,17 @@ func (m Mapfile) validateOrganisms() error {
 		if err := vIntMinVal(organism.Stats.Mass, 1, "mass"); err != nil {
 			result = multierror.Append(result, err)
 		}
-		if organism.Classes != nil {
-			for _, class := range organism.Classes {
-				if err := vStringMinLen(string(class), 2, "classes"); err != nil {
+		if organism.Classes != nil && len(organism.Classes) > 0 {
+			for _, orgClass := range organism.Classes {
+				ok := false
+				for _, ecoClass := range m.Ecology.Classes {
+					if orgClass == ecoClass {
+						ok = true
+						break
+					}
+				}
+				if !ok {
+					err := errors.Errorf("class \"%s\" not found in ``ecology.classes``", orgClass)
 					result = multierror.Append(result, err)
 				}
 			}

@@ -9,7 +9,7 @@ atlas:
       
   map:
 
-    raw: |
+    text: |
       $$$$$$$$$$$$$$$$$$$$
       $$$$$$$$$$$$$$$$$$$$
       ..$$$$$$$$$$$$$$$$$$
@@ -31,7 +31,7 @@ atlas:
       $..............$$$$$
       $$$......$$$$$$$$$$$
 
-    link: 'examples/maps/forest'
+    file: 'examples/maps/forest'
 
   legend:
     '$': 'pine_tree'
@@ -45,7 +45,7 @@ ecology:
 organisms:
 
   pine_tree:
-    attributes:
+    stats:
       name: 'pine tree'
       symbol: '$'
       walkable: false
@@ -57,7 +57,7 @@ organisms:
       - 'passive'
       - 'producer'
 
-    behaviors:
+    abilities:
       - name: grow
         properties:
           rate: 10

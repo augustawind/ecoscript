@@ -15,18 +15,18 @@ var nextOrganismID OrganismID = 0
 
 type Organism struct {
 	id        OrganismID
-	Stats     *Attributes
-	Abilities AbilityMap
-	Classes   []Class
+	Stats     *Attributes `mapstructure:"stats"`
+	Classes   []Class     `mapstructure:"classes"`
+	Abilities AbilityMap  `mapstructure:"abilities"`
 }
 
 type Attributes struct {
-	Name     string   `mapstructure:"name"`
-	Symbol   rune     `mapstructure:"symbol"`
-	Walkable bool     `mapstructure:"walkable"`
-	Energy   int      `mapstructure:"energy"`
-	Size     int      `mapstructure:"size"`
-	Mass     int      `mapstructure:"mass"`
+	Name     string `mapstructure:"name"`
+	Symbol   rune   `mapstructure:"symbol"`
+	Walkable bool   `mapstructure:"walkable"`
+	Energy   int    `mapstructure:"energy"`
+	Size     int    `mapstructure:"size"`
+	Mass     int    `mapstructure:"mass"`
 }
 
 type AbilityMap map[string]*Ability
