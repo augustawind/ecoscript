@@ -50,55 +50,57 @@ type space interface {
 type World struct {
 	width  int
 	height int
+	layers []*Layer
+}
+
+type Layer struct {
+	width  int
+	height int
+	depth  int
+	name   string
 	cells  []*Cell
 }
 
-func (w *World) GetCell(vec Vector) *Cell {
-	idx := w.getIndex(vec)
-	return w.cells[idx]
+type Cell struct {
+	occupier  *Organism
+	walkables []*Organism
+	depths    map[OrganismID]int
+}
+
+//func (w *World) Display() string {
+//	for y := range w.height {
+//		for x := range w.width {
+//
+//		}
+//	}
+//}
+
+func (w *World) Layer(layer int) *Layer {
+	return w.layers[layer]
+}
+
+func (w *World) Cell(vec Vector) *Cell {
+	index := vec.Flatten(w.height)
+	return w.layers[vec.Z].cells[index]
+}
+
+func (w *World) Width() int {
+	return w.width
+}
+
+func (w *World) Height() int {
+	return w.height
 }
 
 func (w *World) InBounds(vec Vector) bool {
-	return w.getIndex(vec) < len(w.cells)
+	return vec.Flatten(w.height) < w.width*w.height
 }
 
 func (w *World) Walkable(vec Vector) bool {
-	return w.InBounds(vec) && w.GetCell(vec).AllP(func(o *Organism) bool {
-		return o.Walkable()
-	})
+	return w.InBounds(vec) && !w.Cell(vec).Occupied()
 }
 
-// View returns all Vectors in a radius around a given origin in random order.
-func (w *World) View(origin Vector, radius int) []Vector {
-	vectors := w.view(origin, radius)
-
-	shuffled := make([]Vector, len(vectors))
-	for i, j := range rand.Perm(len(vectors)) {
-		shuffled[i] = vectors[j]
-	}
-	return shuffled
-}
-
-func (w *World) view(origin Vector, radius int) []Vector {
-	n := (2*radius + 1) ^ 2 - 1
-	vectors := make([]Vector, n)
-
-	i := 0
-	for y := -radius; y < radius; y++ {
-		for x := -radius; x < radius; x++ {
-			vec := origin.Plus(Vector{x, y})
-			if !vec.Equals(origin) {
-				vectors[i] = vec
-				i++
-			}
-		}
-	}
-	return vectors
-}
-
-// ViewWalkable is like View except it only returns walkable tiles.
-func (w *World) ViewWalkable(origin Vector, radius int) []Vector {
-	vectors := w.View(origin, radius)
+func (w *World) FilterWalkable(vectors []Vector) []Vector {
 	walkables := make([]Vector, 0)
 	for i := range vectors {
 		vec := vectors[i]
@@ -109,21 +111,41 @@ func (w *World) ViewWalkable(origin Vector, radius int) []Vector {
 	return walkables
 }
 
+func (w *World) View(origin Vector, radius int) []Vector {
+	vectors := origin.Radius(radius)
+	return VecFilter(vectors, w.InBounds)
+}
+
+func (w *World) ViewR(origin Vector, radius int) []Vector {
+	vectors := origin.RadiusR(radius)
+	return VecFilter(vectors, w.InBounds)
+}
+
+func (w *World) ViewWalkable(origin Vector, radius int) []Vector {
+	vectors := origin.Radius(radius)
+	return VecFilter(vectors, w.Walkable)
+}
+
+func (w *World) ViewWalkableR(origin Vector, radius int) []Vector {
+	vectors := origin.RadiusR(radius)
+	return VecFilter(vectors, w.Walkable)
+}
+
 func (w *World) RandWalkable(origin Vector, radius int) Vector {
 	vectors := w.ViewWalkable(origin, radius)
-	idx := rand.Intn(len(vectors))
-	return vectors[idx]
+	index := rand.Intn(len(vectors))
+	return vectors[index]
 }
 
 func (w *World) Remove(organism *Organism, vec Vector) (ok bool) {
-	cell := w.GetCell(vec)
+	cell := w.Cell(vec)
 	ok = cell.Remove(organism)
 	return
 }
 
 func (w *World) Move(organism *Organism, src Vector, dest Vector) (ok bool) {
-	oldCell := w.GetCell(src)
-	newCell := w.GetCell(dest)
+	oldCell := w.Cell(src)
+	newCell := w.Cell(dest)
 
 	newCell.Add(organism)
 	ok = oldCell.Remove(organism)
@@ -139,55 +161,143 @@ func (w *World) Kill(organism *Organism, vec Vector) (ok bool) {
 	return
 }
 
-func (w *World) getIndex(vec Vector) int {
-	return vec.X + (vec.Y * w.height)
+// ---------------------------------------------------------------------
+// Layer
+
+func (l *Layer) Cell(vec Vector) *Cell {
+	index := vec.Flatten(l.height)
+	return l.cells[index]
+}
+
+func (l *Layer) Width() int {
+	return l.width
+}
+
+func (l *Layer) Height() int {
+	return l.height
+}
+
+func (l *Layer) InBounds(vec Vector) bool {
+	return vec.Flatten(l.height) < l.width*l.height
+}
+
+func (l *Layer) Walkable(vec Vector) bool {
+	return l.InBounds(vec) && !l.Cell(vec).Occupied()
+}
+
+func (l *Layer) View(origin Vector, radius int) []Vector {
+	vectors := origin.Radius(radius)
+	return VecFilter(vectors, l.InBounds)
+}
+
+func (l *Layer) ViewR(origin Vector, radius int) []Vector {
+	vectors := origin.RadiusR(radius)
+	return VecFilter(vectors, l.InBounds)
+}
+
+func (l *Layer) ViewWalkable(origin Vector, radius int) []Vector {
+	vectors := origin.Radius(radius)
+	return VecFilter(vectors, l.Walkable)
+}
+
+func (l *Layer) ViewWalkableR(origin Vector, radius int) []Vector {
+	vectors := origin.RadiusR(radius)
+	return VecFilter(vectors, l.Walkable)
+}
+
+func (l *Layer) RandWalkable(origin Vector, radius int) Vector {
+	vectors := l.ViewWalkable(origin, radius)
+	index := rand.Intn(len(vectors))
+	return vectors[index]
+}
+
+func (l *Layer) Remove(organism *Organism, vec Vector) (ok bool) {
+	cell := l.Cell(vec)
+	ok = cell.Remove(organism)
+	return
+}
+
+func (l *Layer) Move(organism *Organism, src Vector, dest Vector) (ok bool) {
+	oldCell := l.Cell(src)
+	newCell := l.Cell(dest)
+
+	newCell.Add(organism)
+	ok = oldCell.Remove(organism)
+	return
+}
+
+func (l *Layer) Kill(organism *Organism, vec Vector) (ok bool) {
+	// TODO: implement corpses
+	ok = l.Remove(organism, vec)
+	if ok {
+		organism.EndLife()
+	}
+	return
 }
 
 // ---------------------------------------------------------------------
 // Cell
 
-type Cell struct {
-	indexes   map[OrganismID]int
-	organisms []*Organism
+func (c *Cell) Occupied() bool {
+	return c.occupier != nil
 }
 
-func (c *Cell) AllP(p func(o *Organism) bool) bool {
-	for i := range c.organisms {
-		organism := c.organisms[i]
-		if !p(organism) {
-			return false
-		}
-	}
-	return true
+func (c *Cell) Occupier() *Organism {
+	return c.occupier
+}
+
+func (c *Cell) Organisms() []*Organism {
+	organisms := make([]*Organism, len(c.walkables)+1)
+	copy(organisms, c.walkables)
+	organisms = append(organisms, c.occupier)
+	return organisms
 }
 
 func (c *Cell) Shuffled() []*Organism {
-	n := len(c.organisms)
+	organisms := c.Organisms()
+	n := len(organisms)
 	shuffled := make([]*Organism, n)
 
 	for i, j := range rand.Perm(n) {
-		shuffled[i] = c.organisms[j]
+		shuffled[i] = organisms[j]
 	}
 	return shuffled
 }
 
-func (c *Cell) Add(organism *Organism) {
-	c.indexes[organism.id] = len(c.organisms)
-	c.organisms = append(c.organisms, organism)
+func (c *Cell) Add(organism *Organism) (ok bool) {
+	if organism.Walkable() {
+		if !c.Occupied() {
+			c.occupier = organism
+			return true
+		}
+	} else {
+		c.depths[organism.id] = len(c.walkables)
+		c.walkables = append(c.walkables, organism)
+		return true
+	}
+	return false
 }
 
 func (c *Cell) Remove(organism *Organism) (ok bool) {
-	for id, index := range c.indexes {
-		if id == organism.id {
-			c.delOrganismByIndex(index)
+	if organism.Walkable() {
+		if c.occupier.id == organism.id {
+			c.occupier = nil
 			return true
+		}
+	} else {
+		for id, depth := range c.depths {
+			if id == organism.id {
+				c.delWalkable(depth)
+				return true
+			}
 		}
 	}
 	return false
 }
 
-func (c *Cell) delOrganismByIndex(i int) {
-	copy(c.organisms[i:], c.organisms[i+1:])
-	c.organisms[len(c.organisms)-1] = nil
-	c.organisms = c.organisms[:len(c.organisms)-1]
+func (c *Cell) delWalkable(depth int) {
+	copy(c.walkables[depth:], c.walkables[depth+1:])
+	z := len(c.walkables) - 1
+	c.walkables[z] = nil
+	c.walkables = c.walkables[:z]
 }
