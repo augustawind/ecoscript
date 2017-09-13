@@ -10,14 +10,14 @@ type Space interface {
 	// Height returns the length of the y-axis.
 	Height() int
 
+	// Cell returns the Cell at the given vector.
+	Cell(vec Vector) *Cell
+
 	// InBounds returns true if the given Vector is in bounds.
 	InBounds(vec Vector) bool
 
 	// Walkable returns true if the given Vector is walkable.
 	Walkable(vec Vector) bool
-
-	// Cell returns the Cell at the given vector.
-	Cell(vec Vector) *Cell
 
 	// View returns all Vectors that are in-bounds within a radius.
 	View(origin Vector, radius int) []Vector
@@ -51,51 +51,51 @@ type Space interface {
 	Move(org *Organism, src Vector, dst Vector) (func(), bool)
 }
 
-func InBounds(s Space, vec Vector) bool {
+func SpaceInBounds(s Space, vec Vector) bool {
 	return vec.Flatten(s.Height()) < s.Width()*s.Height()
 }
 
-func Walkable(s Space, vec Vector) bool {
+func SpaceWalkable(s Space, vec Vector) bool {
 	return s.InBounds(vec) && !s.Cell(vec).Occupied()
 }
 
-func View(s Space, origin Vector, radius int) []Vector {
+func SpaceView(s Space, origin Vector, radius int) []Vector {
 	vectors := origin.Radius(radius)
 	return VecFilter(vectors, s.InBounds)
 }
 
-func ViewR(s Space, origin Vector, radius int) []Vector {
+func SpaceViewR(s Space, origin Vector, radius int) []Vector {
 	vectors := origin.RadiusR(radius)
 	return VecFilter(vectors, s.InBounds)
 }
 
-func ViewWalkable(s Space, origin Vector, radius int) []Vector {
+func SpaceViewWalkable(s Space, origin Vector, radius int) []Vector {
 	vectors := origin.Radius(radius)
 	return VecFilter(vectors, s.Walkable)
 }
 
-func ViewWalkableR(s Space, origin Vector, radius int) []Vector {
+func SpaceViewWalkableR(s Space, origin Vector, radius int) []Vector {
 	vectors := origin.RadiusR(radius)
 	return VecFilter(vectors, s.Walkable)
 }
 
-func RandWalkable(s Space, origin Vector, radius int) Vector {
+func SpaceRandWalkable(s Space, origin Vector, radius int) Vector {
 	vectors := s.ViewWalkable(origin, radius)
 	index := rand.Intn(len(vectors))
 	return vectors[index]
 }
 
-func Add(s Space, organism *Organism, vec Vector) (exec func(), ok bool) {
+func SpaceAdd(s Space, organism *Organism, vec Vector) (exec func(), ok bool) {
 	cell := s.Cell(vec)
 	return cell.Add(organism)
 }
 
-func Remove(s Space, organism *Organism, vec Vector) (exec func(), ok bool) {
+func SpaceRemove(s Space, organism *Organism, vec Vector) (exec func(), ok bool) {
 	cell := s.Cell(vec)
 	return cell.Remove(organism)
 }
 
-func Move(s Space, organism *Organism, src Vector, dst Vector) (exec func(), ok bool) {
+func SpaceMove(s Space, organism *Organism, src Vector, dst Vector) (exec func(), ok bool) {
 	oldCell := s.Cell(src)
 	newCell := s.Cell(dst)
 	execAdd, okAdd := newCell.Add(organism)
@@ -108,7 +108,7 @@ func Move(s Space, organism *Organism, src Vector, dst Vector) (exec func(), ok 
 	return
 }
 
-func Kill(s Space, organism *Organism, vec Vector) (exec func(), ok bool) {
+func SpaceKill(s Space, organism *Organism, vec Vector) (exec func(), ok bool) {
 	// TODO: implement corpses
 	execRm, ok := s.Remove(organism, vec)
 	if ok {
