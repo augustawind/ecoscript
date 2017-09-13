@@ -76,11 +76,11 @@ func (o *Organism) AddBehaviors(behaviors ...Behavior) {
 func (o *Organism) Init() {
 	for i := range o.behaviors {
 		behavior := o.behaviors[i]
-		behavior.Init(o)
+		behavior.Init()
 	}
 }
 
-func (o *Organism) Act(world *World, origin Vector) {
+func (o *Organism) Act(world *World, vec Vector) {
 	t := baseTimeUnits
 	timeUnits := &t
 	prevTurns := make([]Behavior, 0)
@@ -88,7 +88,7 @@ func (o *Organism) Act(world *World, origin Vector) {
 	for {
 		// Apply universal action energy cost.
 		if alive := o.Transfer(baseActionCost); !alive {
-			execKill, ok := world.Kill(o, origin)
+			execKill, ok := world.Kill(o, vec)
 			if !ok {
 				// TODO: figure out how to handle ok=false here
 				log.Panicf("organism '%s' died, but Kill() failed unexpectedly", o.name)
@@ -96,7 +96,7 @@ func (o *Organism) Act(world *World, origin Vector) {
 			execKill()
 			break
 		}
-		done := o.NextMove(world, origin, timeUnits, prevTurns)
+		done := o.NextMove(world, vec, timeUnits, prevTurns)
 		if done {
 			break
 		}
@@ -104,7 +104,7 @@ func (o *Organism) Act(world *World, origin Vector) {
 }
 
 // TODO: maybe make Organism an interface so this can be more flexible?
-func (o *Organism) NextMove(world *World, origin Vector, timeUnits *int, prevTurns []Behavior) (done bool) {
+func (o *Organism) NextMove(world *World, vec Vector, timeUnits *int, prevTurns []Behavior) (done bool) {
 	// TODO: make this more interesting. This just cycles through each behavior in order.
 	if len(prevTurns) == len(o.behaviors) {
 		done = true
@@ -113,7 +113,7 @@ func (o *Organism) NextMove(world *World, origin Vector, timeUnits *int, prevTur
 	behavior := o.behaviors[len(prevTurns)]
 
 	// Attempt to perform behavior.
-	delay, exec := behavior.Act(world, origin)
+	delay, exec := behavior.Act(world, o, vec)
 
 	// Skip behavior if not enough time.
 	if *timeUnits-delay < 0 {
@@ -127,7 +127,7 @@ func (o *Organism) NextMove(world *World, origin Vector, timeUnits *int, prevTur
 		done = true
 	}
 	exec()
-	prevTurns = append(prevTurns, &behavior)
+	prevTurns = append(prevTurns, behavior)
 	return
 }
 

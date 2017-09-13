@@ -4,32 +4,20 @@ import "math/rand"
 
 type Behavior interface {
 	Name() string
-	Init(organism *Organism)
-	Act(world *World, origin Vector) (delay int, exec func())
+	Init()
+	Act(world *World, organism *Organism, vec Vector) (delay int, exec func())
 }
 
-type baseBehavior struct {
-	organism *Organism
-}
+type base struct{}
 
-func (b *baseBehavior) Name() string {
-	return "Behavior"
-}
-
-func (b *baseBehavior) Init(organism *Organism) {
-	b.organism = organism
-}
-
-func (b *baseBehavior) Act(world *World, origin Vector) (int, func()) {
-	return 0, func() {}
-}
+func (b *base) Init() {}
 
 // ---------------------------------------------------------------------
 // Behavior: Grow
 
 // Grow increases the subject's energy by its growth rate.
 type Grow struct {
-	*baseBehavior
+	*base
 	Rate int
 }
 
@@ -37,10 +25,10 @@ func (b *Grow) Name() string {
 	return "Grow"
 }
 
-func (b *Grow) Act(world *World, origin Vector) (delay int, exec func()) {
+func (b *Grow) Act(world *World, organism *Organism, vec Vector) (delay int, exec func()) {
 	delay = 10
 	exec = func() {
-		b.organism.Transfer(b.Rate)
+		organism.Transfer(b.Rate)
 	}
 	return
 }
@@ -51,7 +39,7 @@ func (b *Grow) Act(world *World, origin Vector) (delay int, exec func()) {
 // Eat attempts to consume an adjacent organism. If successful, the subject
 // gains energy from the consumed organism.
 type Eat struct {
-	*baseBehavior
+	*base
 	Diet []string
 }
 
@@ -59,8 +47,8 @@ func (b *Eat) Name() string {
 	return "Eat"
 }
 
-func (b *Eat) Act(world *World, origin Vector) (delay int, exec func()) {
-	vectors := world.View(origin, 1)
+func (b *Eat) Act(world *World, organism *Organism, vec Vector) (delay int, exec func()) {
+	vectors := world.View(vec, 1)
 
 	for i := range vectors {
 		vec := vectors[i]
@@ -79,7 +67,7 @@ func (b *Eat) Act(world *World, origin Vector) (delay int, exec func()) {
 					delay = 15
 					exec = func() {
 						execKill()
-						b.organism.Transfer(energy)
+						organism.Transfer(energy)
 					}
 				}
 				return
@@ -121,7 +109,7 @@ var directions = []Vector{
 }
 
 type Flow struct {
-	*baseBehavior
+	*base
 	Delta  Vector
 	Speed  int
 	Effort int
@@ -131,16 +119,15 @@ func (b *Flow) Name() string {
 	return "Flow"
 }
 
-func (b *Flow) Init(organism *Organism) {
-	b.baseBehavior.Init(organism)
+func (b *Flow) Init() {
 	b.randomizeDelta()
 }
 
-func (b *Flow) Act(world *World, origin Vector) (delay int, exec func()) {
-	dest := origin.Plus(b.Delta)
+func (b *Flow) Act(world *World, organism *Organism, vec Vector) (delay int, exec func()) {
+	dest := vec.Plus(b.Delta)
 
 	if !world.Walkable(dest) {
-		dest = world.RandWalkable(origin, b.Speed)
+		dest = world.RandWalkable(vec, b.Speed)
 		if !world.Walkable(dest) {
 			return
 		}
@@ -148,9 +135,9 @@ func (b *Flow) Act(world *World, origin Vector) (delay int, exec func()) {
 
 	delay = 10
 	exec = func() {
-		b.Delta = dest.Minus(origin)
-		world.Move(b.organism, origin, dest)
-		b.organism.Transfer(b.Effort)
+		b.Delta = dest.Minus(vec)
+		world.Move(organism, vec, dest)
+		organism.Transfer(b.Effort)
 	}
 	return
 }
@@ -171,7 +158,7 @@ func (b *Wander) Name() string {
 	return "Wander"
 }
 
-func (b *Wander) Act(world *World, origin Vector) (delay int, exec func()) {
+func (b *Wander) Act(world *World, organism *Organism, vec Vector) (delay int, exec func()) {
 	b.randomizeDelta()
-	return b.Flow.Act(world, origin)
+	return b.Flow.Act(world, organism, vec)
 }
