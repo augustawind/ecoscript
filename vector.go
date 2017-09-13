@@ -16,7 +16,7 @@ type Vector struct {
 }
 
 func Vec2D(x, y int) Vector {
-	return Vector{X: x, Y: y}
+	return Vector{X: x, Y: y, Z: -1}
 }
 
 func (v Vector) Equals(a Vector) bool {

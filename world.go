@@ -2,8 +2,8 @@ package main
 
 import "math/rand"
 
-// spaces have width and height and contain Cells.
-type space interface {
+// Space is a container that has width and height and contains Cells.
+type Space interface {
 	// Width returns the length of the x-axis.
 	Width() int
 
@@ -31,17 +31,21 @@ type space interface {
 	// RandWalkable finds a random walkable Vector within a radius.
 	RandWalkable(origin Vector, radius int) Vector
 
+	// Add attempts to add an Organism at the given Vector.
+	// It returns true if it succeeded or false if it wasn't found.
+	Add(org *Organism, vec Vector) (ok bool)
+
 	// Remove attempts to remove an Organism at the given Vector.
 	// It returns true if it succeeded or false if it wasn't found.
-	Remove(org *Organism, src Vector) (ok bool)
+	Remove(org *Organism, vec Vector) (ok bool)
+
+	// Remove attempts to remove and kill an Organism at the given Vector.
+	// It returns true if it succeeded or false if it wasn't found.
+	Kill(org *Organism, vec Vector) (ok bool)
 
 	// Move attempts to move an Organism from one Vector to another
 	// It returns true if it succeeded or false if it wasn't found.
 	Move(org *Organism, src Vector, dst Vector) (ok bool)
-
-	// Remove attempts to remove and kill an Organism at the given Vector.
-	// It returns true if it succeeded or false if it wasn't found.
-	Kill(org *Organism, src Vector) (ok bool)
 }
 
 // ---------------------------------------------------------------------
@@ -137,6 +141,11 @@ func (w *World) RandWalkable(origin Vector, radius int) Vector {
 	return vectors[index]
 }
 
+func (w *World) Add(organism *Organism, vec Vector) (ok bool) {
+	cell := w.Cell(vec)
+	return cell.Add(organism)
+}
+
 func (w *World) Remove(organism *Organism, vec Vector) (ok bool) {
 	cell := w.Cell(vec)
 	ok = cell.Remove(organism)
@@ -209,6 +218,11 @@ func (l *Layer) RandWalkable(origin Vector, radius int) Vector {
 	vectors := l.ViewWalkable(origin, radius)
 	index := rand.Intn(len(vectors))
 	return vectors[index]
+}
+
+func (l *Layer) Add(organism *Organism, vec Vector) (ok bool) {
+	cell := l.Cell(vec)
+	return cell.Add(organism)
 }
 
 func (l *Layer) Remove(organism *Organism, vec Vector) (ok bool) {
