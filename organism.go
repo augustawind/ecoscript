@@ -1,11 +1,17 @@
 package main
 
+import (
+	"log"
+)
+
 const (
 	baseActionCost int = -5
+	baseTimeUnits  int = 10
 )
 
 type Organism struct {
 	id        OrganismID
+	name      string
 	display   rune
 	behaviors []Behavior
 	classes   []string
@@ -34,26 +40,54 @@ func (o *Organism) Init() {
 }
 
 func (o *Organism) Act(world *World, origin Vector) {
-	timeUnits := 10
+	t := baseTimeUnits
+	timeUnits := &t
+	prevTurns := make([]*Behavior, 0)
 
-	for i := range o.behaviors {
-		// TODO: come up with better way to decide which behavior(s) to use
-		behavior := o.behaviors[i]
-
+	for {
 		// Apply universal action energy cost.
 		if alive := o.Transfer(baseActionCost); !alive {
 			execKill, ok := world.Kill(o, origin)
 			if !ok {
 				// TODO: figure out how to handle ok=false here
-				panic(o)
+				log.Panicf("organism '%s' died, but Kill() failed unexpectedly", o.name)
 			}
 			execKill()
 			break
 		}
-
-		// Act out behavior.
-		delay, exec := behavior.Act(world, origin)
+		done := o.NextMove(world, origin, timeUnits, prevTurns)
+		if done {
+			break
+		}
 	}
+}
+
+// TODO: maybe make Organism an interface so this can be more flexible?
+func (o *Organism) NextMove(world *World, origin Vector, timeUnits *int, prevTurns []*Behavior) (done bool) {
+	// TODO: make this more interesting. This just cycles through each behavior in order.
+	if len(prevTurns) == len(o.behaviors) {
+		done = true
+		return
+	}
+	behavior := o.behaviors[len(prevTurns)]
+
+	// Attempt to perform behavior.
+	delay, exec := behavior.Act(world, origin)
+
+	// Skip behavior if not enough time.
+	if *timeUnits-delay < 0 {
+		log.Printf("behavior '%s' has delay '%d' but there are only '%d' time units left", behavior.Name(), delay, timeUnits)
+		return
+	}
+
+	// Make this the last action if time is out.
+	*timeUnits -= delay
+	if *timeUnits == 0 {
+		done = true
+	}
+	exec()
+	prevTurns = append(prevTurns, &behavior)
+	return
 }
 
 // ---------------------------------------------------------------------

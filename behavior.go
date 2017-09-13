@@ -3,12 +3,17 @@ package main
 import "math/rand"
 
 type Behavior interface {
+	Name() string
 	Init(organism *Organism)
 	Act(world *World, origin Vector) (delay int, exec func())
 }
 
 type baseBehavior struct {
 	organism *Organism
+}
+
+func (b *baseBehavior) Name() string {
+	return "Behavior"
 }
 
 func (b *baseBehavior) Init(organism *Organism) {
@@ -28,6 +33,10 @@ type Grow struct {
 	Rate int
 }
 
+func (b *Grow) Name() string {
+	return "Grow"
+}
+
 func (b *Grow) Act(world *World, origin Vector) (delay int, exec func()) {
 	delay = 10
 	exec = func() {
@@ -44,6 +53,10 @@ func (b *Grow) Act(world *World, origin Vector) (delay int, exec func()) {
 type Eat struct {
 	*baseBehavior
 	Diet []string
+}
+
+func (b *Eat) Name() string {
+	return "Eat"
 }
 
 func (b *Eat) Act(world *World, origin Vector) (delay int, exec func()) {
@@ -114,6 +127,10 @@ type Flow struct {
 	Effort int
 }
 
+func (b *Flow) Name() string {
+	return "Flow"
+}
+
 func (b *Flow) Init(organism *Organism) {
 	b.baseBehavior.Init(organism)
 	b.randomizeDelta()
@@ -148,6 +165,10 @@ func (b *Flow) randomizeDelta() {
 
 type Wander struct {
 	*Flow
+}
+
+func (b *Wander) Name() string {
+	return "Wander"
 }
 
 func (b *Wander) Act(world *World, origin Vector) (delay int, exec func()) {
