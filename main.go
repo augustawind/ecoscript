@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-
-	"github.com/davecgh/go-spew/spew"
 )
 
 func main() {
@@ -12,7 +10,6 @@ func main() {
 	tree := mkTree()
 	world.Add(tree, Vector{5, 5, 1})
 	fmt.Println(world.Layer(1).Display())
-	spew.Dump(BehaviorIndex)
 }
 
 func mkTree() *Organism {

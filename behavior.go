@@ -1,6 +1,12 @@
 package main
 
-import "math/rand"
+import (
+	"math/rand"
+
+	"github.com/pkg/errors"
+	"github.com/spf13/viper"
+	"github.com/magiconair/properties"
+)
 
 type Behavior interface {
 	Name() string
@@ -11,6 +17,23 @@ type Behavior interface {
 type base struct{}
 
 func (b *base) Init() {}
+
+func UnmarshalBehavior(name string, properties *viper.Viper) (behavior Behavior, err error) {
+	switch name {
+	case "grow":
+		behavior = new(Grow)
+	case "eat":
+		behavior = new(Eat)
+	case "flow":
+		behavior = new(Flow)
+	case "wander":
+		behavior = new(Wander)
+	default:
+		panic(errors.Errorf("unexpected behavior name \"%s\"", name)) // FIXME
+	}
+	err = properties.UnmarshalExact(&behavior)
+	return
+}
 
 // ---------------------------------------------------------------------
 // Behavior: Grow

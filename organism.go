@@ -53,10 +53,6 @@ func (o *Organism) Init() {
 	for i := range o.Behaviors {
 		behavior := o.Behaviors[i]
 		behavior.Init()
-		_, ok := BehaviorIndex[behavior.Name()]
-		if !ok {
-			BehaviorIndex[behavior.Name()] = 
-		}
 	}
 }
 
