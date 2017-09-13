@@ -15,8 +15,8 @@ var nextOrganismID OrganismID = 0
 
 type Organism struct {
 	id        OrganismID
-	Attrs 	  *Attributes
-	Behaviors []Behavior
+	Stats     *Attributes
+	Abilities AbilityMap
 	Classes   []Class
 }
 
@@ -29,23 +29,28 @@ type Attributes struct {
 	Mass     int      `mapstructure:"mass"`
 }
 
+type AbilityMap map[string]*Ability
+
 type Class string
 
 func NewOrganism(attrs *Attributes) *Organism {
-	behaviors := make([]Behavior, 0)
+	abilities := make(AbilityMap)
 	classes := make([]Class, 0)
 	organism := &Organism{
-		id: nextOrganismID,
-		Attrs: attrs,
-		Behaviors: behaviors,
-		Classes: classes,
+		id:        nextOrganismID,
+		Stats:     attrs,
+		Abilities: abilities,
+		Classes:   classes,
 	}
 	nextOrganismID++
 	return organism
 }
 
-func (o *Organism) AddBehaviors(behaviors ...Behavior) *Organism {
-	o.Behaviors = append(o.Behaviors, behaviors...)
+func (o *Organism) AddAbilities(abilities ...*Ability) *Organism {
+	for i := range abilities {
+		ability := abilities[i]
+		o.Abilities[ability.Name] = ability
+	}
 	return o
 }
 
@@ -55,17 +60,17 @@ func (o *Organism) AddClasses(classes ...Class) *Organism {
 }
 
 func (o *Organism) Init() *Organism {
-	for i := range o.Behaviors {
-		behavior := o.Behaviors[i]
-		behavior.Init()
-	}
 	return o
 }
 
 func (o *Organism) Act(world *World, vec Vector) {
 	t := baseTimeUnits
 	timeUnits := &t
-	prevTurns := make([]Behavior, 0)
+
+	unusedAbilities := make([]*Ability, len(o.Abilities))
+	for _, ability := range o.Abilities {
+		unusedAbilities = append(unusedAbilities, ability)
+	}
 
 	for {
 		// Apply universal action energy cost.
@@ -73,12 +78,12 @@ func (o *Organism) Act(world *World, vec Vector) {
 			execKill, ok := world.Kill(o, vec)
 			if !ok {
 				// TODO: figure out how to handle ok=false here
-				log.Panicf("organism '%s' died, but Kill() failed unexpectedly", o.Attrs.Name)
+				log.Panicf("organism '%s' died, but Kill() failed unexpectedly", o.Stats.Name)
 			}
 			execKill()
 			break
 		}
-		done := o.NextMove(world, vec, timeUnits, prevTurns)
+		done := o.NextMove(world, vec, timeUnits, unusedAbilities)
 		if done {
 			break
 		}
@@ -86,20 +91,20 @@ func (o *Organism) Act(world *World, vec Vector) {
 }
 
 // TODO: maybe make Organism an interface so this can be more flexible?
-func (o *Organism) NextMove(world *World, vec Vector, timeUnits *int, prevTurns []Behavior) (done bool) {
-	// TODO: make this more interesting. This just cycles through each behavior in order.
-	if len(prevTurns) == len(o.Behaviors) {
+func (o *Organism) NextMove(world *World, vec Vector, timeUnits *int, unusedAbilities []*Ability) (done bool) {
+	// TODO: make this more interesting. This just cycles through each Ability.
+	if len(unusedAbilities) == 0 {
 		done = true
 		return
 	}
-	behavior := o.Behaviors[len(prevTurns)]
+	ability := unusedAbilities[0]
 
-	// Attempt to perform behavior.
-	delay, exec := behavior.Act(world, o, vec)
+	// Attempt to perform ability.
+	delay, exec := ability.Execute(world, o, vec)
 
-	// Skip behavior if not enough time.
+	// Skip ability if not enough time.
 	if *timeUnits-delay < 0 {
-		log.Printf("behavior '%s' has delay '%d' but there are only '%d' time units left", behavior.Name(), delay, timeUnits)
+		log.Printf("ability '%s' has delay '%d' but there are only '%d' time units left", ability.Name, delay, timeUnits)
 		return
 	}
 
@@ -109,30 +114,30 @@ func (o *Organism) NextMove(world *World, vec Vector, timeUnits *int, prevTurns 
 		done = true
 	}
 	exec()
-	prevTurns = append(prevTurns, behavior)
+	unusedAbilities = unusedAbilities[1:]
 	return
 }
 
 // ---------------------------------------------------------------------
-// Behavior API.
+// Ability API.
 
 func (o *Organism) Transfer(energy int) bool {
-	o.Attrs.Energy += energy
+	o.Stats.Energy += energy
 	return o.Alive()
 }
 
 func (o *Organism) Biomass() int {
-	return o.Attrs.Size * o.Attrs.Mass
+	return o.Stats.Size * o.Stats.Mass
 }
 
 func (o *Organism) Alive() bool {
-	return o.Attrs.Energy > 0
+	return o.Stats.Energy > 0
 }
 
 func (o *Organism) Walkable() bool {
-	return o.Attrs.Walkable
+	return o.Stats.Walkable
 }
 
 func (o *Organism) EndLife() {
-	o.Attrs.Energy = 0
+	o.Stats.Energy = 0
 }

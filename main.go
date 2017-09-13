@@ -23,7 +23,7 @@ func mkTree() *Organism {
 	}).AddClasses(
 		"passive",
 		"producer",
-	).AddBehaviors(
-		&Grow{Rate: 10},
+	).AddAbilities(
+		&Ability{"grow", Properties{"rate": 10}},
 	).Init()
 }

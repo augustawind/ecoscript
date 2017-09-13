@@ -31,5 +31,5 @@ func (c *Cell) Display() string {
 }
 
 func (o *Organism) Display() string {
-	return string(o.Attrs.Symbol)
+	return string(o.Stats.Symbol)
 }
