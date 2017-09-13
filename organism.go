@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+
+	"github.com/pkg/errors"
 )
 
 const (
@@ -9,8 +11,7 @@ const (
 	baseTimeUnits  int = 10
 )
 
-type Organism struct {
-	id        OrganismID
+type Attributes struct {
 	name      string
 	display   rune
 	behaviors []Behavior
@@ -22,14 +23,54 @@ type Organism struct {
 	mass      int
 }
 
+func (a Attributes) validateNonempty(name string, attr string) {
+	if len(attr) == 0 {
+		err := errors.Errorf("attribute '%s' must not be blank", name)
+		log.Panic(err)
+	}
+}
+
+func (a Attributes) validatePositive(name string, attr int) {
+	if attr == 0 {
+		err := errors.Errorf("attribute '%s' must be greater than 0", name)
+		log.Panic(err)
+	}
+}
+
+func (a Attributes) init() {
+	a.validateNonempty("name", a.name)
+	a.validatePositive("display", int(a.display))
+	a.validatePositive("delay", a.delay)
+	a.validatePositive("energy", a.energy)
+	a.validatePositive("size", a.size)
+	a.validatePositive("mass", a.mass)
+
+	if a.behaviors == nil {
+		a.behaviors = make([]Behavior, 0)
+	}
+	if a.classes == nil {
+		a.classes = make([]string, 0)
+	}
+}
+
+type Organism struct {
+	Attributes
+	id OrganismID
+}
+
 type OrganismID int
 
 var nextOrganismID OrganismID = 0
 
-func NewOrganism() *Organism {
-	organism := &Organism{id: nextOrganismID}
+func NewOrganism(attrs Attributes) *Organism {
+	attrs.init()
+	organism := &Organism{id: nextOrganismID, Attributes: attrs}
 	nextOrganismID++
 	return organism
+}
+
+func (o *Organism) AddBehaviors(behaviors ...Behavior) {
+	o.behaviors = append(o.behaviors, behaviors...)
 }
 
 func (o *Organism) Init() {
@@ -42,7 +83,7 @@ func (o *Organism) Init() {
 func (o *Organism) Act(world *World, origin Vector) {
 	t := baseTimeUnits
 	timeUnits := &t
-	prevTurns := make([]*Behavior, 0)
+	prevTurns := make([]Behavior, 0)
 
 	for {
 		// Apply universal action energy cost.
@@ -63,7 +104,7 @@ func (o *Organism) Act(world *World, origin Vector) {
 }
 
 // TODO: maybe make Organism an interface so this can be more flexible?
-func (o *Organism) NextMove(world *World, origin Vector, timeUnits *int, prevTurns []*Behavior) (done bool) {
+func (o *Organism) NextMove(world *World, origin Vector, timeUnits *int, prevTurns []Behavior) (done bool) {
 	// TODO: make this more interesting. This just cycles through each behavior in order.
 	if len(prevTurns) == len(o.behaviors) {
 		done = true
@@ -96,10 +137,6 @@ func (o *Organism) NextMove(world *World, origin Vector, timeUnits *int, prevTur
 func (o *Organism) Transfer(energy int) bool {
 	o.energy += energy
 	return o.Alive()
-}
-
-func (o *Organism) Display() string {
-	return string(o.display)
 }
 
 func (o *Organism) Biomass() int {

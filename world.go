@@ -9,21 +9,36 @@ type World struct {
 	layers []*Layer
 }
 
-type Layer struct {
-	width  int
-	height int
-	depth  int
-	name   string
-	cells  []*Cell
+func NewWorld(width, height, depth int) *World {
+	layers := make([]*Layer, depth)
+
+	return &World{
+		width:  width,
+		height: height,
+		layers: layers,
+	}
 }
 
-//func (w *World) Display() string {
-//	for y := range w.height {
-//		for x := range w.width {
-//
-//		}
-//	}
-//}
+func (w *World) NewLayer(name string) *Layer {
+	width := w.Width()
+	height := w.Height()
+
+	nCells := width * height
+	cells := make([]*Cell, nCells)
+	for i := range cells {
+		cells[i] = new(Cell)
+	}
+
+	layer := &Layer{
+		name:   name,
+		width:  width,
+		height: height,
+		depth:  w.Depth(),
+		cells:  cells,
+	}
+	w.layers = append(w.layers, layer)
+	return layer
+}
 
 func (w *World) Layer(layer int) *Layer {
 	return w.layers[layer]
@@ -37,8 +52,12 @@ func (w *World) Height() int {
 	return w.height
 }
 
+func (w *World) Depth() int {
+	return len(w.layers)
+}
+
 func (w *World) Cell(vec Vector) *Cell {
-	index := vec.Flatten(w.height)
+	index := vec.Flatten(w.Height())
 	return w.layers[vec.Z].cells[index]
 }
 
@@ -89,6 +108,14 @@ func (w *World) Kill(organism *Organism, vec Vector) (exec func(), ok bool) {
 // ---------------------------------------------------------------------
 // Layer
 
+type Layer struct {
+	width  int
+	height int
+	depth  int
+	name   string
+	cells  []*Cell
+}
+
 func (l *Layer) Width() int {
 	return l.width
 }
@@ -98,7 +125,7 @@ func (l *Layer) Height() int {
 }
 
 func (l *Layer) Cell(vec Vector) *Cell {
-	index := vec.Flatten(l.height)
+	index := vec.Flatten(l.Height())
 	return l.cells[index]
 }
 

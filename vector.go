@@ -1,13 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"math/rand"
 )
-
-func main() {
-	fmt.Println("vim-go")
-}
 
 type Vector struct {
 	X int
@@ -74,10 +69,16 @@ func (v Vector) Dir() Vector {
 	})
 }
 
-// Flatten returns the index of the Vector as if its grid were flattened into
-// a single row.
-func (v Vector) Flatten(n int) int {
-	return v.X + (v.Y * n)
+// Flatten returns the index of the Vector as if its XY grid were flattened
+// into a single row, given the total number of rows in the grid.
+func (v Vector) Flatten(nRows int) int {
+	return v.X + (v.Y * nRows)
+}
+
+// Unflatten returns a 2-D Vector from an index and a grid with the given
+// dimensions. It is the inverse of Flatten.
+func Unflatten(i int, width int, height int) Vector {
+	return Vec2D(i%width, i%height)
 }
 
 // Radius returns the surrounding Vectors by the given radius.
