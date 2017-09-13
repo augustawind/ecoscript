@@ -16,7 +16,6 @@ func mkTree() *Organism {
 		display:  '$',
 		walkable: false,
 		energy:   10,
-		delay:    5,
 		size:     20,
 		mass:     20,
 		classes: []string{

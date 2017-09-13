@@ -17,7 +17,6 @@ type Attributes struct {
 	behaviors []Behavior
 	classes   []string
 	walkable  bool
-	delay     int
 	energy    int
 	size      int
 	mass      int
@@ -40,7 +39,6 @@ func (a Attributes) validatePositive(name string, attr int) {
 func (a Attributes) init() {
 	a.validateNonempty("name", a.name)
 	a.validatePositive("display", int(a.display))
-	a.validatePositive("delay", a.delay)
 	a.validatePositive("energy", a.energy)
 	a.validatePositive("size", a.size)
 	a.validatePositive("mass", a.mass)
