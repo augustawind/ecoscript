@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 )
 
 func main() {
@@ -11,6 +12,11 @@ func main() {
 type Vector struct {
 	X int
 	Y int
+	Z int
+}
+
+func Vec2D(x, y int) Vector {
+	return Vector{X: x, Y: y}
 }
 
 func (v Vector) Equals(a Vector) bool {
@@ -29,15 +35,15 @@ func (v Vector) Compare(a Vector) int {
 }
 
 func (v Vector) Plus(a Vector) Vector {
-	return Vector{v.X + a.X, v.Y + a.Y}
+	return Vector{v.X + a.X, v.Y + a.Y, v.Z + a.Z}
 }
 
 func (v Vector) Minus(a Vector) Vector {
-	return Vector{v.X - a.X, v.Y - a.Y}
+	return Vector{v.X - a.X, v.Y - a.Y, v.Z - a.Z}
 }
 
 func (v Vector) Map(f func(int) int) Vector {
-	return Vector{f(v.X), f(v.Y)}
+	return Vector{f(v.X), f(v.Y), f(v.Z)}
 }
 
 func (v Vector) Dir() Vector {
@@ -49,4 +55,48 @@ func (v Vector) Dir() Vector {
 		}
 		return 0
 	})
+}
+
+func (v Vector) Flatten(n int) int {
+	return v.X + (v.Y * n)
+}
+
+// Radius returns the surrounding Vectors by the given radius.
+func (v Vector) Radius(radius int) []Vector {
+	n := (2*radius + 1) ^ 2 - 1
+	vectors := make([]Vector, n)
+
+	i := 0
+	for y := -radius; y < radius; y++ {
+		for x := -radius; x < radius; x++ {
+			vec := v.Plus(Vec2D(x, y))
+			if !vec.Equals(v) {
+				vectors[i] = vec
+				i++
+			}
+		}
+	}
+	return vectors
+}
+
+// RadiusR is like Radius but randomizes the returned Vectors.
+func (v Vector) RadiusR(radius int) []Vector {
+	vectors := v.Radius(radius)
+
+	shuffled := make([]Vector, len(vectors))
+	for i, j := range rand.Perm(len(vectors)) {
+		shuffled[i] = vectors[j]
+	}
+	return shuffled
+}
+
+func VecFilter(vectors []Vector, pred func(Vector) bool) []Vector {
+	result := make([]Vector, 0)
+	for i := range vectors {
+		vec := vectors[i]
+		if pred(vec) {
+			result = append(result, vec)
+		}
+	}
+	return result
 }

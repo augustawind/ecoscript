@@ -40,14 +40,14 @@ type Eat struct {
 }
 
 func (b *Eat) Act(world *World, origin Vector) int {
-	var vectors = world.View(origin, 1)
+	vectors := world.View(origin, 1)
 
 	for i := range vectors {
 		vec := vectors[i]
 		if !world.InBounds(vec) {
 			continue
 		}
-		cell := world.GetCell(vec)
+		cell := world.Cell(vec)
 
 		orgs := cell.Shuffled()
 		for j := range orgs {
@@ -87,14 +87,14 @@ func (b *Eat) consumeBiomass(biomass int) int {
 // Behavior: Move
 
 var directions = []Vector{
-	Vector{0, -1},
-	Vector{1, -1},
-	Vector{1, 0},
-	Vector{1, 1},
-	Vector{0, 1},
-	Vector{-1, 1},
-	Vector{-1, 0},
-	Vector{-1, -1},
+	Vec2D(0, -1),
+	Vec2D(1, -1),
+	Vec2D(1, 0),
+	Vec2D(1, 1),
+	Vec2D(0, 1),
+	Vec2D(-1, 1),
+	Vec2D(-1, 0),
+	Vec2D(-1, -1),
 }
 
 type Move struct {
@@ -127,7 +127,7 @@ func (b *Move) Act(world *World, origin Vector) int {
 
 func (b *Move) randomizeDelta() {
 	i := rand.Intn(len(directions))
-	b.Delta = directions[i].Plus(Vector{b.Speed, b.Speed})
+	b.Delta = directions[i].Plus(Vec2D(b.Speed, b.Speed))
 }
 
 // ---------------------------------------------------------------------
