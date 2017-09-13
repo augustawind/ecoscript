@@ -13,21 +13,17 @@ func main() {
 }
 
 func mkTree() *Organism {
-	o := NewOrganism(Attributes{
+	return NewOrganism(&Attributes{
 		Name:     "Tree",
 		Symbol:   '$',
 		Walkable: false,
 		Energy:   10,
 		Size:     20,
 		Mass:     20,
-		Classes: []string{
-			"passive",
-			"producer",
-		},
-	})
-	o.AddBehaviors(
+	}).AddClasses(
+		"passive",
+		"producer",
+	).AddBehaviors(
 		&Grow{Rate: 10},
-	)
-	o.Init()
-	return o
+	).Init()
 }

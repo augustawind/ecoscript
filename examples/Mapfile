@@ -45,13 +45,17 @@ ecology:
 organisms:
 
   pine_tree:
-    name: 'pine tree'
-    symbol: '$'
-    walkable: false
-    energy: 50
-    size: 5
-    mass: 100
-    classes: ['passive', 'producer']
+    attributes:
+      name: 'pine tree'
+      symbol: '$'
+      walkable: false
+      energy: 50
+      size: 5
+      mass: 100
+
+    classes:
+      - 'passive'
+      - 'producer'
 
     behaviors:
       - name: grow

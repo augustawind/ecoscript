@@ -62,7 +62,7 @@ func (b *Grow) Act(world *World, organism *Organism, vec Vector) (delay int, exe
 // gains energy from the consumed organism.
 type Eat struct {
 	*base
-	Diet []string
+	Diet []Class
 }
 
 func (b *Eat) Name() string {

@@ -30,7 +30,7 @@ type Mapfile struct {
 		Classes []string `mapstructure:"classes"`
 	} `mapstructure:"ecology"`
 
-	Organisms map[string]Attributes `mapstructure:"organisms"`
+	Organisms map[string]Organism `mapstructure:"organisms"`
 }
 
 // ParseMapfile reads and parses a Mapfile given a path.
@@ -121,22 +121,22 @@ func (m Mapfile) validateLegend() error {
 
 func (m Mapfile) validateOrganisms() error {
 	var result error
-	for _, attrs := range m.Organisms {
-		if err := vStringMinLen(attrs.Name, 2, "name"); err != nil {
+	for _, organism := range m.Organisms {
+		if err := vStringMinLen(organism.Attrs.Name, 2, "name"); err != nil {
 			result = multierror.Append(result, err)
 		}
-		if err := vIntMinVal(attrs.Energy, 1, "energy"); err != nil {
+		if err := vIntMinVal(organism.Attrs.Energy, 1, "energy"); err != nil {
 			result = multierror.Append(result, err)
 		}
-		if err := vIntMinVal(attrs.Size, 1, "size"); err != nil {
+		if err := vIntMinVal(organism.Attrs.Size, 1, "size"); err != nil {
 			result = multierror.Append(result, err)
 		}
-		if err := vIntMinVal(attrs.Mass, 1, "mass"); err != nil {
+		if err := vIntMinVal(organism.Attrs.Mass, 1, "mass"); err != nil {
 			result = multierror.Append(result, err)
 		}
-		if attrs.Classes != nil {
-			for _, class := range attrs.Classes {
-				if err := vStringMinLen(class, 2, "classes"); err != nil {
+		if organism.Classes != nil {
+			for _, class := range organism.Classes {
+				if err := vStringMinLen(string(class), 2, "classes"); err != nil {
 					result = multierror.Append(result, err)
 				}
 			}

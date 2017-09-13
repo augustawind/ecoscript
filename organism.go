@@ -9,51 +9,57 @@ const (
 	baseTimeUnits  int = 10
 )
 
-type Attributes struct {
-	Name      string     `mapstructure:"name"`
-	Symbol    rune       `mapstructure:"symbol"`
-	Walkable  bool       `mapstructure:"walkable"`
-	Energy    int        `mapstructure:"energy"`
-	Size      int        `mapstructure:"size"`
-	Mass      int        `mapstructure:"mass"`
-	Classes   []string   `mapstructure:"classes"`
-	Behaviors []Behavior `mapstructure:"behaviors"`
-}
-
-func (a Attributes) init() {
-	if a.Behaviors == nil {
-		a.Behaviors = make([]Behavior, 0)
-	}
-	if a.Classes == nil {
-		a.Classes = make([]string, 0)
-	}
-}
-
-type Organism struct {
-	Attributes
-	id OrganismID
-}
-
 type OrganismID int
 
 var nextOrganismID OrganismID = 0
 
-func NewOrganism(attrs Attributes) *Organism {
-	attrs.init()
-	organism := &Organism{id: nextOrganismID, Attributes: attrs}
+type Organism struct {
+	id        OrganismID
+	Attrs 	  *Attributes
+	Behaviors []Behavior
+	Classes   []Class
+}
+
+type Attributes struct {
+	Name     string   `mapstructure:"name"`
+	Symbol   rune     `mapstructure:"symbol"`
+	Walkable bool     `mapstructure:"walkable"`
+	Energy   int      `mapstructure:"energy"`
+	Size     int      `mapstructure:"size"`
+	Mass     int      `mapstructure:"mass"`
+}
+
+type Class string
+
+func NewOrganism(attrs *Attributes) *Organism {
+	behaviors := make([]Behavior, 0)
+	classes := make([]Class, 0)
+	organism := &Organism{
+		id: nextOrganismID,
+		Attrs: attrs,
+		Behaviors: behaviors,
+		Classes: classes,
+	}
 	nextOrganismID++
 	return organism
 }
 
-func (o *Organism) AddBehaviors(behaviors ...Behavior) {
+func (o *Organism) AddBehaviors(behaviors ...Behavior) *Organism {
 	o.Behaviors = append(o.Behaviors, behaviors...)
+	return o
 }
 
-func (o *Organism) Init() {
+func (o *Organism) AddClasses(classes ...Class) *Organism {
+	o.Classes = append(o.Classes, classes...)
+	return o
+}
+
+func (o *Organism) Init() *Organism {
 	for i := range o.Behaviors {
 		behavior := o.Behaviors[i]
 		behavior.Init()
 	}
+	return o
 }
 
 func (o *Organism) Act(world *World, vec Vector) {
@@ -67,7 +73,7 @@ func (o *Organism) Act(world *World, vec Vector) {
 			execKill, ok := world.Kill(o, vec)
 			if !ok {
 				// TODO: figure out how to handle ok=false here
-				log.Panicf("organism '%s' died, but Kill() failed unexpectedly", o.Name)
+				log.Panicf("organism '%s' died, but Kill() failed unexpectedly", o.Attrs.Name)
 			}
 			execKill()
 			break
@@ -111,18 +117,22 @@ func (o *Organism) NextMove(world *World, vec Vector, timeUnits *int, prevTurns 
 // Behavior API.
 
 func (o *Organism) Transfer(energy int) bool {
-	o.Energy += energy
+	o.Attrs.Energy += energy
 	return o.Alive()
 }
 
 func (o *Organism) Biomass() int {
-	return o.Size * o.Mass
+	return o.Attrs.Size * o.Attrs.Mass
 }
 
 func (o *Organism) Alive() bool {
-	return o.Energy > 0
+	return o.Attrs.Energy > 0
+}
+
+func (o *Organism) Walkable() bool {
+	return o.Attrs.Walkable
 }
 
 func (o *Organism) EndLife() {
-	o.Energy = 0
+	o.Attrs.Energy = 0
 }
