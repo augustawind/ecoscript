@@ -33,22 +33,22 @@ func (o *Organism) Init() {
 }
 
 func (o *Organism) Act(world *World, origin Vector) {
-	for i := range o.behaviors {
-		behavior := o.behaviors[i]
-
-		// Apply universal action energy cost.
-		if alive := o.Transfer(baseActionCost); !alive {
-			if ok := world.Kill(o, origin); !ok {
-				// TODO: figure out how to handle ok=false here
-				panic(o)
-			}
-			break
-		}
-
-		// Act out behavior.
-		delay := behavior.Act(world, origin)
-		// ...
-	}
+	//	for i := range o.behaviors {
+	//		behavior := o.behaviors[i]
+	//
+	//		// Apply universal action energy cost.
+	//		if alive := o.Transfer(baseActionCost); !alive {
+	//			if ok := world.Kill(o, origin); !ok {
+	//				// TODO: figure out how to handle ok=false here
+	//				panic(o)
+	//			}
+	//			break
+	//		}
+	//
+	//		// Act out behavior.
+	//		delay := behavior.Act(world, origin)
+	//		// ...
+	//	}
 }
 
 // ---------------------------------------------------------------------
