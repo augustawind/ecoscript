@@ -1,8 +1,11 @@
 package main
 
 import (
+	"io/ioutil"
 	"log"
+	"strings"
 
+	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 )
@@ -27,7 +30,7 @@ type Mapfile struct {
 		Classes []string `mapstructure:"classes"`
 	} `mapstructure:"ecology"`
 
-	Organisms map[string]string `mapstructure:"organisms"`
+	Organisms map[string]Attributes `mapstructure:"organisms"`
 }
 
 // ParseMapfile reads and parses a Mapfile given a path.
@@ -39,15 +42,123 @@ func ParseMapfile(path string) (mapfile Mapfile) {
 	v.SetDefault("defaults.use_map_symbols", false)
 
 	v.SetConfigFile(path)
-	v.SetConfigType("toml")
+	v.SetConfigType("yaml")
 	err := v.ReadInConfig()
 	if err != nil {
-		log.Fatal(errors.Errorf("error reading Mapfile '%s': %v", path, err))
+		log.Fatal(errors.Wrapf(err, "error reading Mapfile '%s'", path))
 	}
 
 	err = v.UnmarshalExact(&mapfile)
 	if err != nil {
-		log.Fatal(errors.Errorf("error unmarshaling config: %v", err))
+		log.Fatal(errors.Wrap(err, "error unmarshaling config"))
+	}
+
+	err = mapfile.Validate()
+	if err != nil {
+		log.Fatal(err)
 	}
 	return
+}
+
+func (m Mapfile) Validate() (err error) {
+	var mapText string
+	mapRawGiven := len(m.Atlas.Map.Raw) > 0
+	mapLinkGiven := len(m.Atlas.Map.Link) > 0
+	if !(mapRawGiven || mapLinkGiven) {
+		return errors.New("one of ``atlas.map.raw`` or ``atlas.map.link`` must be present")
+	}
+	if mapRawGiven && mapLinkGiven {
+		return errors.New("``atlas.map.raw`` and ``atlas.map.link`` cannot both be present")
+	}
+	if mapRawGiven {
+		mapText = m.Atlas.Map.Raw
+	} else {
+		bytes, err := ioutil.ReadFile(m.Atlas.Map.Link)
+		if err != nil {
+			return errors.Wrap(err, "error reading ``atlas.map.link``")
+		}
+		mapText = string(bytes)
+	}
+
+	if len(m.Atlas.Legend) == 0 {
+		return errors.New("``atlas.legend`` must have at least one entry")
+	}
+	err = m.validateMap(mapText)
+	if err != nil {
+		return
+	}
+
+	if len(m.Organisms) == 0 {
+		return errors.New("``organisms`` must have at least one entry")
+	}
+	err = m.validateLegend()
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func (m Mapfile) validateMap(mapText string) error {
+	for _, char := range strings.Split(mapText, "") {
+		_, ok := m.Atlas.Legend[char]
+		if !ok {
+			return errors.Errorf("map symbol '%s' not found in ``atlas.legend``", char)
+		}
+	}
+	return nil
+}
+
+func (m Mapfile) validateLegend() error {
+	for _, key := range m.Atlas.Legend {
+		_, ok := m.Organisms[key]
+		if !ok {
+			return errors.Errorf("'%s' is referenced in ``atlas.legend``, but no entry is found in ``organisms``")
+		}
+	}
+	return nil
+}
+
+func (m Mapfile) validateOrganisms() error {
+	var result error
+	for _, attrs := range m.Organisms {
+		if err := vStringMinLen(attrs.Name, 2, "name"); err != nil {
+			result = multierror.Append(result, err)
+		}
+		if err := vIntMinVal(attrs.Energy, 1, "energy"); err != nil {
+			result = multierror.Append(result, err)
+		}
+		if err := vIntMinVal(attrs.Size, 1, "size"); err != nil {
+			result = multierror.Append(result, err)
+		}
+		if err := vIntMinVal(attrs.Mass, 1, "mass"); err != nil {
+			result = multierror.Append(result, err)
+		}
+		if attrs.Classes != nil {
+			for _, class := range attrs.Classes {
+				if err := vStringMinLen(class, 2, "classes"); err != nil {
+					result = multierror.Append(result, err)
+				}
+			}
+		}
+	}
+	return result
+}
+
+func vStringMinLen(val string, min int, key string) (err error) {
+	if len(val) < min {
+		err = errors.Errorf("organism attribute \"%s\" must have %d or more characters", key, min)
+	}
+	return
+}
+
+func vIntMinVal(val int, min int, key string) (err error) {
+	if val < min {
+		err = errors.Errorf("organism attribute \"%s\" must be %d or greater", key, min)
+	}
+	return
+}
+
+func (m Mapfile) ToWorld() *World {
+	return nil
 }

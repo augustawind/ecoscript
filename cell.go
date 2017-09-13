@@ -40,7 +40,7 @@ func (c *Cell) Shuffled() []*Organism {
 }
 
 func (c *Cell) Exists(organism *Organism) bool {
-	if organism.Walkable() {
+	if organism.Walkable {
 		if c.occupier.id == organism.id {
 			return true
 		}
@@ -55,7 +55,7 @@ func (c *Cell) Exists(organism *Organism) bool {
 }
 
 func (c *Cell) Add(organism *Organism) (exec func(), ok bool) {
-	if organism.Walkable() {
+	if organism.Walkable {
 		if !c.Occupied() {
 			exec = func() { c.occupier = organism }
 			ok = true
@@ -71,7 +71,7 @@ func (c *Cell) Add(organism *Organism) (exec func(), ok bool) {
 }
 
 func (c *Cell) Remove(organism *Organism) (exec func(), ok bool) {
-	if organism.Walkable() {
+	if organism.Walkable {
 		if c.occupier.id == organism.id {
 			exec = func() { c.occupier = nil }
 			ok = true

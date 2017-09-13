@@ -1,6 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/davecgh/go-spew/spew"
+)
 
 func main() {
 	var world = NewWorld(25, 25, 1)
@@ -8,17 +12,18 @@ func main() {
 	tree := mkTree()
 	world.Add(tree, Vector{5, 5, 1})
 	fmt.Println(world.Layer(1).Display())
+	spew.Dump(BehaviorIndex)
 }
 
 func mkTree() *Organism {
 	o := NewOrganism(Attributes{
-		name:     "Tree",
-		display:  '$',
-		walkable: false,
-		energy:   10,
-		size:     20,
-		mass:     20,
-		classes: []string{
+		Name:     "Tree",
+		Symbol:   '$',
+		Walkable: false,
+		Energy:   10,
+		Size:     20,
+		Mass:     20,
+		Classes: []string{
 			"passive",
 			"producer",
 		},

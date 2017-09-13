@@ -22,7 +22,7 @@ type Grow struct {
 }
 
 func (b *Grow) Name() string {
-	return "Grow"
+	return "grow"
 }
 
 func (b *Grow) Act(world *World, organism *Organism, vec Vector) (delay int, exec func()) {
@@ -44,7 +44,7 @@ type Eat struct {
 }
 
 func (b *Eat) Name() string {
-	return "Eat"
+	return "eat"
 }
 
 func (b *Eat) Act(world *World, organism *Organism, vec Vector) (delay int, exec func()) {
@@ -78,8 +78,8 @@ func (b *Eat) Act(world *World, organism *Organism, vec Vector) (delay int, exec
 }
 
 func (b *Eat) isEdible(organism *Organism) bool {
-	for i := range organism.classes {
-		class := organism.classes[i]
+	for i := range organism.Classes {
+		class := organism.Classes[i]
 		for j := range b.Diet {
 			subjectClass := b.Diet[j]
 			if class == subjectClass {
@@ -116,7 +116,7 @@ type Flow struct {
 }
 
 func (b *Flow) Name() string {
-	return "Flow"
+	return "flow"
 }
 
 func (b *Flow) Init() {
@@ -155,7 +155,7 @@ type Wander struct {
 }
 
 func (b *Wander) Name() string {
-	return "Wander"
+	return "wander"
 }
 
 func (b *Wander) Act(world *World, organism *Organism, vec Vector) (delay int, exec func()) {

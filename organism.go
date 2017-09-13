@@ -2,8 +2,6 @@ package main
 
 import (
 	"log"
-
-	"github.com/pkg/errors"
 )
 
 const (
@@ -12,42 +10,22 @@ const (
 )
 
 type Attributes struct {
-	name      string
-	display   rune
-	behaviors []Behavior
-	classes   []string
-	walkable  bool
-	energy    int
-	size      int
-	mass      int
-}
-
-func (a Attributes) validateNonempty(name string, attr string) {
-	if len(attr) == 0 {
-		err := errors.Errorf("attribute '%s' must not be blank", name)
-		log.Panic(err)
-	}
-}
-
-func (a Attributes) validatePositive(name string, attr int) {
-	if attr == 0 {
-		err := errors.Errorf("attribute '%s' must be greater than 0", name)
-		log.Panic(err)
-	}
+	Name      string     `mapstructure:"name"`
+	Symbol    rune       `mapstructure:"symbol"`
+	Walkable  bool       `mapstructure:"walkable"`
+	Energy    int        `mapstructure:"energy"`
+	Size      int        `mapstructure:"size"`
+	Mass      int        `mapstructure:"mass"`
+	Classes   []string   `mapstructure:"classes"`
+	Behaviors []Behavior `mapstructure:"behaviors"`
 }
 
 func (a Attributes) init() {
-	a.validateNonempty("name", a.name)
-	a.validatePositive("display", int(a.display))
-	a.validatePositive("energy", a.energy)
-	a.validatePositive("size", a.size)
-	a.validatePositive("mass", a.mass)
-
-	if a.behaviors == nil {
-		a.behaviors = make([]Behavior, 0)
+	if a.Behaviors == nil {
+		a.Behaviors = make([]Behavior, 0)
 	}
-	if a.classes == nil {
-		a.classes = make([]string, 0)
+	if a.Classes == nil {
+		a.Classes = make([]string, 0)
 	}
 }
 
@@ -68,13 +46,17 @@ func NewOrganism(attrs Attributes) *Organism {
 }
 
 func (o *Organism) AddBehaviors(behaviors ...Behavior) {
-	o.behaviors = append(o.behaviors, behaviors...)
+	o.Behaviors = append(o.Behaviors, behaviors...)
 }
 
 func (o *Organism) Init() {
-	for i := range o.behaviors {
-		behavior := o.behaviors[i]
+	for i := range o.Behaviors {
+		behavior := o.Behaviors[i]
 		behavior.Init()
+		_, ok := BehaviorIndex[behavior.Name()]
+		if !ok {
+			BehaviorIndex[behavior.Name()] = 
+		}
 	}
 }
 
@@ -89,7 +71,7 @@ func (o *Organism) Act(world *World, vec Vector) {
 			execKill, ok := world.Kill(o, vec)
 			if !ok {
 				// TODO: figure out how to handle ok=false here
-				log.Panicf("organism '%s' died, but Kill() failed unexpectedly", o.name)
+				log.Panicf("organism '%s' died, but Kill() failed unexpectedly", o.Name)
 			}
 			execKill()
 			break
@@ -104,11 +86,11 @@ func (o *Organism) Act(world *World, vec Vector) {
 // TODO: maybe make Organism an interface so this can be more flexible?
 func (o *Organism) NextMove(world *World, vec Vector, timeUnits *int, prevTurns []Behavior) (done bool) {
 	// TODO: make this more interesting. This just cycles through each behavior in order.
-	if len(prevTurns) == len(o.behaviors) {
+	if len(prevTurns) == len(o.Behaviors) {
 		done = true
 		return
 	}
-	behavior := o.behaviors[len(prevTurns)]
+	behavior := o.Behaviors[len(prevTurns)]
 
 	// Attempt to perform behavior.
 	delay, exec := behavior.Act(world, o, vec)
@@ -133,22 +115,18 @@ func (o *Organism) NextMove(world *World, vec Vector, timeUnits *int, prevTurns 
 // Behavior API.
 
 func (o *Organism) Transfer(energy int) bool {
-	o.energy += energy
+	o.Energy += energy
 	return o.Alive()
 }
 
 func (o *Organism) Biomass() int {
-	return o.size * o.mass
+	return o.Size * o.Mass
 }
 
 func (o *Organism) Alive() bool {
-	return o.energy > 0
-}
-
-func (o *Organism) Walkable() bool {
-	return o.walkable
+	return o.Energy > 0
 }
 
 func (o *Organism) EndLife() {
-	o.energy = 0
+	o.Energy = 0
 }
