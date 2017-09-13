@@ -94,7 +94,7 @@ func (b *Eat) consumeBiomass(biomass int) int {
 }
 
 // ---------------------------------------------------------------------
-// Behavior: Move
+// Behavior: Flow
 
 var directions = []Vector{
 	Vec2D(0, -1),
@@ -107,19 +107,19 @@ var directions = []Vector{
 	Vec2D(-1, -1),
 }
 
-type Move struct {
+type Flow struct {
 	*baseBehavior
 	Delta  Vector
 	Speed  int
 	Effort int
 }
 
-func (b *Move) Init(organism *Organism) {
+func (b *Flow) Init(organism *Organism) {
 	b.baseBehavior.Init(organism)
 	b.randomizeDelta()
 }
 
-func (b *Move) Act(world *World, origin Vector) (delay int, exec func()) {
+func (b *Flow) Act(world *World, origin Vector) (delay int, exec func()) {
 	dest := origin.Plus(b.Delta)
 
 	if !world.Walkable(dest) {
@@ -138,19 +138,19 @@ func (b *Move) Act(world *World, origin Vector) (delay int, exec func()) {
 	return
 }
 
-func (b *Move) randomizeDelta() {
+func (b *Flow) randomizeDelta() {
 	i := rand.Intn(len(directions))
 	b.Delta = directions[i].Plus(Vec2D(b.Speed, b.Speed))
 }
 
 // ---------------------------------------------------------------------
-// Behavior: Wander(Move)
+// Behavior: Wander(Flow)
 
 type Wander struct {
-	*Move
+	*Flow
 }
 
 func (b *Wander) Act(world *World, origin Vector) (delay int, exec func()) {
 	b.randomizeDelta()
-	return b.Move.Act(world, origin)
+	return b.Flow.Act(world, origin)
 }
