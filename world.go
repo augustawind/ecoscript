@@ -33,19 +33,19 @@ type Space interface {
 
 	// Add attempts to add an Organism at the given Vector.
 	// It returns true if it succeeded or false if it wasn't found.
-	Add(org *Organism, vec Vector) (ok bool)
+	Add(org *Organism, vec Vector) (func(), bool)
 
 	// Remove attempts to remove an Organism at the given Vector.
 	// It returns true if it succeeded or false if it wasn't found.
-	Remove(org *Organism, vec Vector) (ok bool)
+	Remove(org *Organism, vec Vector) (func(), bool)
 
 	// Remove attempts to remove and kill an Organism at the given Vector.
 	// It returns true if it succeeded or false if it wasn't found.
-	Kill(org *Organism, vec Vector) (ok bool)
+	Kill(org *Organism, vec Vector) (func(), bool)
 
 	// Move attempts to move an Organism from one Vector to another
 	// It returns true if it succeeded or false if it wasn't found.
-	Move(org *Organism, src Vector, dst Vector) (ok bool)
+	Move(org *Organism, src Vector, dst Vector) (func(), bool)
 }
 
 // ---------------------------------------------------------------------
@@ -66,7 +66,10 @@ type Layer struct {
 }
 
 type Cell struct {
-	occupier  *Organism
+	// main
+	occupier *Organism
+	// over
+	cover     *Organism
 	walkables []*Organism
 	depths    map[OrganismID]int
 }
@@ -141,31 +144,34 @@ func (w *World) RandWalkable(origin Vector, radius int) Vector {
 	return vectors[index]
 }
 
-func (w *World) Add(organism *Organism, vec Vector) (ok bool) {
+func (w *World) Add(organism *Organism, vec Vector) (exec func(), ok bool) {
 	cell := w.Cell(vec)
 	return cell.Add(organism)
 }
 
-func (w *World) Remove(organism *Organism, vec Vector) (ok bool) {
+func (w *World) Remove(organism *Organism, vec Vector) (exec func(), ok bool) {
 	cell := w.Cell(vec)
-	ok = cell.Remove(organism)
-	return
+	return cell.Remove(organism)
 }
 
-func (w *World) Move(organism *Organism, src Vector, dest Vector) (ok bool) {
+func (w *World) Move(organism *Organism, src Vector, dst Vector) (exec func(), ok bool) {
 	oldCell := w.Cell(src)
-	newCell := w.Cell(dest)
+	newCell := w.Cell(dst)
+	execAdd, okAdd := newCell.Add(organism)
+	execRm, okRm := oldCell.Remove(organism)
 
-	newCell.Add(organism)
-	ok = oldCell.Remove(organism)
+	ok = okAdd && okRm
+	if ok {
+		exec = chain(execAdd, execRm)
+	}
 	return
 }
 
-func (w *World) Kill(organism *Organism, vec Vector) (ok bool) {
+func (w *World) Kill(organism *Organism, vec Vector) (exec func(), ok bool) {
 	// TODO: implement corpses
-	ok = w.Remove(organism, vec)
+	execRm, ok := w.Remove(organism, vec)
 	if ok {
-		organism.EndLife()
+		exec = chain(execRm, organism.EndLife)
 	}
 	return
 }
@@ -220,31 +226,34 @@ func (l *Layer) RandWalkable(origin Vector, radius int) Vector {
 	return vectors[index]
 }
 
-func (l *Layer) Add(organism *Organism, vec Vector) (ok bool) {
+func (l *Layer) Add(organism *Organism, vec Vector) (exec func(), ok bool) {
 	cell := l.Cell(vec)
 	return cell.Add(organism)
 }
 
-func (l *Layer) Remove(organism *Organism, vec Vector) (ok bool) {
+func (l *Layer) Remove(organism *Organism, vec Vector) (exec func(), ok bool) {
 	cell := l.Cell(vec)
-	ok = cell.Remove(organism)
-	return
+	return cell.Remove(organism)
 }
 
-func (l *Layer) Move(organism *Organism, src Vector, dest Vector) (ok bool) {
+func (l *Layer) Move(organism *Organism, src Vector, dst Vector) (exec func(), ok bool) {
 	oldCell := l.Cell(src)
-	newCell := l.Cell(dest)
+	nelCell := l.Cell(dst)
+	execAdd, okAdd := nelCell.Add(organism)
+	execRm, okRm := oldCell.Remove(organism)
 
-	newCell.Add(organism)
-	ok = oldCell.Remove(organism)
+	ok = okAdd && okRm
+	if ok {
+		exec = chain(execAdd, execRm)
+	}
 	return
 }
 
-func (l *Layer) Kill(organism *Organism, vec Vector) (ok bool) {
+func (l *Layer) Kill(organism *Organism, vec Vector) (exec func(), ok bool) {
 	// TODO: implement corpses
-	ok = l.Remove(organism, vec)
+	execRm, ok := l.Remove(organism, vec)
 	if ok {
-		organism.EndLife()
+		exec = chain(execRm, organism.EndLife)
 	}
 	return
 }
@@ -278,35 +287,53 @@ func (c *Cell) Shuffled() []*Organism {
 	return shuffled
 }
 
-func (c *Cell) Add(organism *Organism) (ok bool) {
-	if organism.Walkable() {
-		if !c.Occupied() {
-			c.occupier = organism
-			return true
-		}
-	} else {
-		c.depths[organism.id] = len(c.walkables)
-		c.walkables = append(c.walkables, organism)
-		return true
-	}
-	return false
-}
-
-func (c *Cell) Remove(organism *Organism) (ok bool) {
+func (c *Cell) Exists(organism *Organism) bool {
 	if organism.Walkable() {
 		if c.occupier.id == organism.id {
-			c.occupier = nil
 			return true
 		}
 	} else {
-		for id, depth := range c.depths {
+		for id := range c.depths {
 			if id == organism.id {
-				c.delWalkable(depth)
 				return true
 			}
 		}
 	}
 	return false
+}
+
+func (c *Cell) Add(organism *Organism) (exec func(), ok bool) {
+	if organism.Walkable() {
+		if !c.Occupied() {
+			exec = func() { c.occupier = organism }
+			ok = true
+		}
+	} else {
+		exec = func() {
+			c.depths[organism.id] = len(c.walkables)
+			c.walkables = append(c.walkables, organism)
+		}
+		ok = true
+	}
+	return
+}
+
+func (c *Cell) Remove(organism *Organism) (exec func(), ok bool) {
+	if organism.Walkable() {
+		if c.occupier.id == organism.id {
+			exec = func() { c.occupier = nil }
+			ok = true
+		}
+	} else {
+		for id, depth := range c.depths {
+			if id == organism.id {
+				exec = func() { c.delWalkable(depth) }
+				ok = true
+				break
+			}
+		}
+	}
+	return
 }
 
 func (c *Cell) delWalkable(depth int) {

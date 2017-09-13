@@ -10,6 +10,7 @@ type Organism struct {
 	behaviors []Behavior
 	classes   []string
 	walkable  bool
+	delay     int
 	energy    int
 	size      int
 	mass      int
@@ -33,22 +34,26 @@ func (o *Organism) Init() {
 }
 
 func (o *Organism) Act(world *World, origin Vector) {
-	//	for i := range o.behaviors {
-	//		behavior := o.behaviors[i]
-	//
-	//		// Apply universal action energy cost.
-	//		if alive := o.Transfer(baseActionCost); !alive {
-	//			if ok := world.Kill(o, origin); !ok {
-	//				// TODO: figure out how to handle ok=false here
-	//				panic(o)
-	//			}
-	//			break
-	//		}
-	//
-	//		// Act out behavior.
-	//		delay := behavior.Act(world, origin)
-	//		// ...
-	//	}
+	timeUnits := 10
+
+	for i := range o.behaviors {
+		// TODO: come up with better way to decide which behavior(s) to use
+		behavior := o.behaviors[i]
+
+		// Apply universal action energy cost.
+		if alive := o.Transfer(baseActionCost); !alive {
+			execKill, ok := world.Kill(o, origin)
+			if !ok {
+				// TODO: figure out how to handle ok=false here
+				panic(o)
+			}
+			execKill()
+			break
+		}
+
+		// Act out behavior.
+		delay, exec := behavior.Act(world, origin)
+	}
 }
 
 // ---------------------------------------------------------------------
