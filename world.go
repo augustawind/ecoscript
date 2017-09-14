@@ -17,7 +17,7 @@ func NewWorld(width, height int, layerNames []string) *World {
 	world := &World{
 		width:  width,
 		height: height,
-		depth: depth,
+		depth:  depth,
 		layers: layers,
 	}
 	for z, name := range layerNames {

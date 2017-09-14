@@ -2,12 +2,12 @@ package main
 
 import (
 	"io/ioutil"
+	"log"
 	"strings"
 
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
-	"log"
 )
 
 // Mapfile is the Settings object that a Mapfile will be marshaled into.

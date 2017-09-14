@@ -4,24 +4,6 @@ import (
 	"math/rand"
 )
 
-type BehaviorIndex map[string]Behavior
-
-func NewBehaviorIndex(behaviors ...Behavior) BehaviorIndex {
-	index := make(BehaviorIndex)
-	for i := range behaviors {
-		behavior := behaviors[i]
-		index[behavior.Name()] = behavior
-	}
-	return index
-}
-
-var Behaviors = NewBehaviorIndex(
-	new(Grow),
-	new(Eat),
-	new(Flow),
-	new(Wander),
-)
-
 type Behavior interface {
 	Name() string
 	Defaults() Properties
@@ -29,37 +11,7 @@ type Behavior interface {
 	Execute(*Ability, *World, *Organism, Vector) (delay int, exec func())
 }
 
-type Ability struct {
-	Name       string
-	Properties Properties
-}
-
 type Properties map[string]interface{}
-
-func NewAbility(bhv Behavior, customProps Properties) *Ability {
-	props := make(Properties)
-	for key, defaultVal := range bhv.Defaults() {
-		if customVal, ok := customProps[key]; ok {
-			props[key] = customVal
-		} else {
-			props[key] = defaultVal
-		}
-	}
-	return &Ability{bhv.Name(), props}
-}
-
-func (abl *Ability) Get(key string) interface{} {
-	return abl.Properties[key]
-}
-
-func (abl *Ability) Set(key string, value interface{}) {
-	abl.Properties[key] = value
-}
-
-func (abl *Ability) Execute(wld *World, org *Organism, vec Vector) (delay int, exec func()) {
-	behavior := Behaviors[abl.Name]
-	return behavior.Execute(abl, wld, org, vec)
-}
 
 // ---------------------------------------------------------------------
 // Behavior: Grow
@@ -101,7 +53,9 @@ func (bhv *Eat) Name() string {
 }
 
 func (bhv *Eat) Defaults() Properties {
-	return Properties{}
+	return Properties{
+		"diet": make([]Class, 0),
+	}
 }
 
 func (bhv *Eat) Ability(props Properties) *Ability {

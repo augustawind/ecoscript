@@ -59,7 +59,7 @@ func (c *Cell) Exists(org *Organism) bool {
 }
 
 func (c *Cell) Add(org *Organism) (exec action, ok bool) {
-	if !org.Walkable(){
+	if !org.Walkable() {
 		if c.Occupied() {
 			return
 		}

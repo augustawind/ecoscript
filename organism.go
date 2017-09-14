@@ -17,10 +17,10 @@ var (
 )
 
 type Organism struct {
-	id         OrganismID
-	Attrs      *Attributes `mapstructure:"attributes"`
-	Classes    []Class     `mapstructure:"classes"`
-	Abilities  []*Ability  `mapstructure:"abilities"`
+	id        OrganismID
+	Attrs     *Attributes `mapstructure:"attributes"`
+	Classes   []Class     `mapstructure:"classes"`
+	Abilities []*Ability  `mapstructure:"abilities"`
 }
 
 type Attributes struct {
@@ -39,10 +39,10 @@ func NewOrganism(attrs *Attributes) *Organism {
 	classes := make([]Class, 0)
 	*lastOrganismID++
 	return &Organism{
-		id:         *lastOrganismID,
-		Attrs:      attrs,
-		Classes:    classes,
-		Abilities:  abilities,
+		id:        *lastOrganismID,
+		Attrs:     attrs,
+		Classes:   classes,
+		Abilities: abilities,
 	}
 }
 

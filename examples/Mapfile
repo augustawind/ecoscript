@@ -65,3 +65,4 @@ organisms:
       - name: grow
         properties:
           rate: 10
+
