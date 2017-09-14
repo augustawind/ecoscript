@@ -19,9 +19,10 @@ type Mapfile struct {
 
 	Atlas struct {
 		Map struct {
-			grid   [][][]string
-			Inline []string `mapstructure:"inline"`
-			Files  []string `mapstructure:"files"`
+			layers     [][][]string
+			layerNames []string
+			Inline     []atlasLayer `mapstructure:"inline"`
+			Files      []atlasLayer `mapstructure:"files"`
 		} `mapstructure:"map"`
 
 		Legend map[string]string `mapstructure:"legend"`
@@ -31,10 +32,16 @@ type Mapfile struct {
 		Classes []Class `mapstructure:"classes"`
 	} `mapstructure:"ecology"`
 
-	Organisms map[string]OrganismData `mapstructure:"organisms"`
+	Organisms map[string]atlasOrganism `mapstructure:"organisms"`
+	organisms map[string]*Organism
 }
 
-type OrganismData struct {
+type atlasLayer struct {
+	Name string `mapstructure:"name"`
+	Grid string `mapstructure:"grid"`
+}
+
+type atlasOrganism struct {
 	*Organism
 	Abilities []*Ability `mapstructure:"abilities"`
 }
@@ -65,36 +72,44 @@ func ParseMapfile(path string) (mapfile Mapfile) {
 
 func (m Mapfile) Sanitize() (err error) {
 	// Assert exactly one map source is provided
-	mapRawGiven := len(m.Atlas.Map.Inline) > 0
-	mapLinkGiven := len(m.Atlas.Map.Files) > 0
-	if !(mapRawGiven || mapLinkGiven) {
+	mapSourceInline := len(m.Atlas.Map.Inline) > 0
+	mapSourceFiles := len(m.Atlas.Map.Files) > 0
+	if !(mapSourceInline || mapSourceFiles) {
 		return errors.New("one of ``atlas.map.inline`` or ``atlas.map.files`` must be present")
 	}
-	if mapRawGiven && mapLinkGiven {
+	if mapSourceInline && mapSourceFiles {
 		return errors.New("``atlas.map.inline`` and ``atlas.map.files`` cannot both be present")
 	}
 
 	// Read map into layered grid
-	var mapLayers []string
-	if mapRawGiven {
-		mapLayers = m.Atlas.Map.Inline
+	var layers []string
+	var layerNames []string
+
+	if mapSourceInline {
+		layers := make([]string, len(m.Atlas.Map.Inline))
+		copy(layerNames, layers)
+
 	} else {
-		mapLayers := make([]string, len(m.Atlas.Map.Files))
-		for z, file := range m.Atlas.Map.Files {
-			bytes, err := ioutil.ReadFile(file)
+		layers := make([]string, len(m.Atlas.Map.Files))
+		copy(layerNames, layers)
+
+		for z, layerData := range m.Atlas.Map.Files {
+			bytes, err := ioutil.ReadFile(layerData.Grid)
 			if err != nil {
 				return errors.Wrap(err, "error reading ``atlas.map.files``")
 			}
-			mapLayers[z] = string(bytes)
+			layers[z] = string(bytes)
+			layerNames[z] = layerData.Name
 		}
 	}
-	m.Atlas.Map.grid = gridify(mapLayers)
+	m.Atlas.Map.layers = gridify(layers)
+	m.Atlas.Map.layerNames = layerNames
 
 	// Validate map/legend relationship
 	if len(m.Atlas.Legend) == 0 {
 		return errors.New("``atlas.legend`` must have at least one entry")
 	}
-	if err = m.validateMapLegend(mapLayers); err != nil {
+	if err = m.validateMapLegend(layers); err != nil {
 		return
 	}
 
@@ -124,7 +139,7 @@ func gridify(layers []string) [][][]string {
 }
 
 func (m Mapfile) validateMapLegend(mapLayers []string) error {
-	for _, layer := range m.Atlas.Map.grid {
+	for _, layer := range m.Atlas.Map.layers {
 		for _, row := range layer {
 			for _, char := range row {
 				if char == m.Defaults.EmptyTile {
@@ -165,21 +180,21 @@ func (m Mapfile) validateClasses() error {
 
 func (m Mapfile) validateOrganismAttrs() error {
 	var result error
-	for _, organism := range m.Organisms {
-		if err := vStringMinLen(organism.Attrs.Name, 2, "name"); err != nil {
+	for _, orgData := range m.Organisms {
+		if err := vStringMinLen(orgData.Attrs.Name, 2, "name"); err != nil {
 			result = multierror.Append(result, err)
 		}
-		if err := vIntMinVal(organism.Attrs.Energy, 1, "energy"); err != nil {
+		if err := vIntMinVal(orgData.Attrs.Energy, 1, "energy"); err != nil {
 			result = multierror.Append(result, err)
 		}
-		if err := vIntMinVal(organism.Attrs.Size, 1, "size"); err != nil {
+		if err := vIntMinVal(orgData.Attrs.Size, 1, "size"); err != nil {
 			result = multierror.Append(result, err)
 		}
-		if err := vIntMinVal(organism.Attrs.Mass, 1, "mass"); err != nil {
+		if err := vIntMinVal(orgData.Attrs.Mass, 1, "mass"); err != nil {
 			result = multierror.Append(result, err)
 		}
-		if organism.Classes != nil && len(organism.Classes) > 0 {
-			for _, orgClass := range organism.Classes {
+		if orgData.Classes != nil && len(orgData.Classes) > 0 {
+			for _, orgClass := range orgData.Classes {
 				ok := false
 				for _, ecoClass := range m.Ecology.Classes {
 					if orgClass == ecoClass {
@@ -212,5 +227,29 @@ func vIntMinVal(val int, min int, key string) (err error) {
 }
 
 func (m Mapfile) ToWorld() *World {
-	return nil
+	atlasLayers := m.Atlas.Map.layers
+	layerNames := m.Atlas.Map.layerNames
+
+	depth := len(atlasLayers)
+	height := len(atlasLayers[0])
+	width := len(atlasLayers[0][0])
+	world := NewWorld(width, height, depth)
+
+	for z := 0; z < depth; z++ {
+		layer := world.NewLayer(layerNames[z])
+
+		for y := 0; y < height; y++ {
+			for x := 0; x < width; x++ {
+				symbol := atlasLayers[z][y][x]
+				key := m.Atlas.Legend[symbol]
+				data := m.Organisms[key]
+				organism := NewOrganism(data.Attrs).
+					AddClasses(data.Classes...).
+					AddAbilities(data.Abilities...)
+
+				layer.Add(organism, Vec2D(x, y))
+			}
+		}
+	}
+	return world
 }
