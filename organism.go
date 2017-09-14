@@ -22,7 +22,7 @@ type Organism struct {
 
 type Attributes struct {
 	Name     string `mapstructure:"name"`
-	Symbol   rune   `mapstructure:"symbol"`
+	Symbol   string `mapstructure:"symbol"`
 	Walkable bool   `mapstructure:"walkable"`
 	Energy   int    `mapstructure:"energy"`
 	Size     int    `mapstructure:"size"`

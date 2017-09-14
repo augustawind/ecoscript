@@ -31,7 +31,7 @@ atlas:
       $..............$$$$$
       $$$......$$$$$$$$$$$
 
-    file: 'examples/maps/forest'
+#    file: 'examples/maps/forest'
 
   legend:
     '$': 'pine_tree'

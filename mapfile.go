@@ -19,6 +19,7 @@ type Mapfile struct {
 
 	Atlas struct {
 		Map struct {
+			grid [][]string
 			Text string `mapstructure:"text"`
 			File string `mapstructure:"file"`
 		} `mapstructure:"map"`
@@ -30,7 +31,12 @@ type Mapfile struct {
 		Classes []Class `mapstructure:"classes"`
 	} `mapstructure:"ecology"`
 
-	Organisms map[string]Organism `mapstructure:"organisms"`
+	Organisms map[string]OrganismData `mapstructure:"organisms"`
+}
+
+type OrganismData struct {
+	*Organism
+	Abilities []*Ability
 }
 
 // ParseMapfile reads and parses a Mapfile given a path.
@@ -38,8 +44,8 @@ func ParseMapfile(path string) (mapfile Mapfile) {
 	v := viper.New()
 	v.SetTypeByDefaultValue(true)
 
-	v.SetDefault("defaults.empty_tile", " ")
-	v.SetDefault("defaults.use_map_symbols", false)
+	v.SetDefault("defaults.empty_tile", ".")
+	v.SetDefault("defaults.display_legend", false)
 
 	v.SetConfigFile(path)
 	v.SetConfigType("yaml")
@@ -48,7 +54,7 @@ func ParseMapfile(path string) (mapfile Mapfile) {
 		log.Fatal(errors.Wrapf(err, "error reading Mapfile '%s'", path))
 	}
 
-	err = v.UnmarshalExact(&mapfile)
+	err = v.Unmarshal(&mapfile)
 	if err != nil {
 		log.Fatal(errors.Wrap(err, "error unmarshaling config"))
 	}
@@ -65,10 +71,10 @@ func (m Mapfile) Validate() (err error) {
 	mapRawGiven := len(m.Atlas.Map.Text) > 0
 	mapLinkGiven := len(m.Atlas.Map.File) > 0
 	if !(mapRawGiven || mapLinkGiven) {
-		return errors.New("one of ``atlas.map.raw`` or ``atlas.map.link`` must be present")
+		return errors.New("one of ``atlas.map.text`` or ``atlas.map.file`` must be present")
 	}
 	if mapRawGiven && mapLinkGiven {
-		return errors.New("``atlas.map.raw`` and ``atlas.map.link`` cannot both be present")
+		return errors.New("``atlas.map.text`` and ``atlas.map.file`` cannot both be present")
 	}
 	if mapRawGiven {
 		mapText = m.Atlas.Map.Text
@@ -79,6 +85,7 @@ func (m Mapfile) Validate() (err error) {
 		}
 		mapText = string(bytes)
 	}
+	m.Atlas.Map.grid = gridify(mapText)
 
 	if len(m.Atlas.Legend) == 0 {
 		return errors.New("``atlas.legend`` must have at least one entry")
@@ -104,12 +111,27 @@ func (m Mapfile) Validate() (err error) {
 	return
 }
 
+func gridify(s string) [][]string {
+	rows := strings.Split(strings.TrimSpace(s), "\n")
+	grid := make([][]string, len(rows))
+	for y, row := range rows {
+		grid[y] = strings.Split(strings.TrimSpace(row), "")
+	}
+	return grid
+}
+
 func (m Mapfile) validateMap(mapText string) error {
-	for _, char := range strings.Split(mapText, "") {
-		_, ok := m.Atlas.Legend[char]
-		if !ok {
-			return errors.Errorf("map symbol '%s' not found in ``atlas.legend``", char)
+	for _, row := range m.Atlas.Map.grid {
+		for _, char := range row {
+			if char == m.Defaults.EmptyTile {
+				continue
+			}
+			_, ok := m.Atlas.Legend[char]
+			if !ok {
+				return errors.Errorf("map symbol '%s' not found in ``atlas.legend``", char)
+			}
 		}
+
 	}
 	return nil
 }
