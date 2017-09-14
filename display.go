@@ -1,8 +1,8 @@
 package main
 
-var nothing = NewOrganism(&Attributes{
-	Symbol: " ",
-})
+const (
+	blankSymbol = " "
+)
 
 func (l *Layer) Display() string {
 	var result string
@@ -18,14 +18,12 @@ func (l *Layer) Display() string {
 }
 
 func (c *Cell) Display() string {
-	var org *Organism
-	stack := c.All()
-	if len(stack) > 0 {
-		org = stack[len(stack)-1]
-	} else {
-		org = nothing
+	orgs := c.Organisms()
+	if len(orgs) > 0 {
+		org := orgs[len(orgs)-1]
+		return org.Display()
 	}
-	return org.Display()
+	return blankSymbol
 }
 
 func (o *Organism) Display() string {

@@ -118,7 +118,7 @@ func (bhv *Eat) Execute(abl *Ability, wld *World, org *Organism, vec Vector) (de
 		}
 		cell := wld.Cell(vec)
 
-		orgs := cell.AllShuffled()
+		orgs := cell.Shuffled()
 		for j := range orgs {
 			organism := orgs[j]
 			if bhv.isEdible(abl, org) {

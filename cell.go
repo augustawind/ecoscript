@@ -30,14 +30,12 @@ func (c *Cell) Occupier() *Organism {
 	return c.occupier
 }
 
-func (c *Cell) All() []*Organism {
-	orgs := make([]*Organism, len(c.stack.organisms)+1)
-	copy(orgs, c.stack.organisms)
-	return append(orgs, c.occupier)
+func (c *Cell) Organisms() []*Organism {
+	return c.stack.organisms
 }
 
-func (c *Cell) AllShuffled() []*Organism {
-	orgs := c.All()
+func (c *Cell) Shuffled() []*Organism {
+	orgs := c.Organisms()
 	shuffled := make([]*Organism, len(orgs))
 	for i, j := range rand.Perm(len(orgs)) {
 		shuffled[i] = orgs[j]
@@ -167,12 +165,17 @@ func (c *Cell) removeOrg(id OrganismID) (exec action, ok bool) {
 }
 
 func (c *Cell) removeIndex(i int) (exec action, ok bool) {
+	ok = true
+
+	if i >= len(c.stack.organisms) {
+		return
+	}
+
 	exec = func() {
 		copy(c.stack.organisms[i:], c.stack.organisms[i+1:])
 		z := len(c.stack.organisms) - 1
 		c.stack.organisms[z] = nil
 		c.stack.organisms = c.stack.organisms[:z]
 	}
-	ok = true
 	return
 }

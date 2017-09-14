@@ -1,6 +1,8 @@
 package main
 
-import "math/rand"
+import (
+	"math/rand"
+)
 
 // Space is a container that has width and height and contains Cells.
 type Space interface {
