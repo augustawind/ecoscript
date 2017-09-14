@@ -5,15 +5,20 @@ import (
 )
 
 type Cell struct {
-	occupier  *Organism
-	cover     *Organism
-	walkables []*Organism
+	occupier *Organism
+	stack    *orgStack
+}
+
+type orgStack struct {
+	organisms []*Organism
 	indexes   map[OrganismID]int
 }
 
 func newCell() *Cell {
 	cell := new(Cell)
-	cell.indexes = make(map[OrganismID]int)
+	cell.stack = new(orgStack)
+	cell.stack.organisms = make([]*Organism, 0)
+	cell.stack.indexes = make(map[OrganismID]int)
 	return cell
 }
 
@@ -25,17 +30,15 @@ func (c *Cell) Occupier() *Organism {
 	return c.occupier
 }
 
-func (c *Cell) Organisms() []*Organism {
-	orgs := make([]*Organism, len(c.walkables)+1)
-	copy(orgs, c.walkables)
-	orgs = append(orgs, c.occupier)
-	return orgs
+func (c *Cell) All() []*Organism {
+	orgs := make([]*Organism, len(c.stack.organisms)+1)
+	copy(orgs, c.stack.organisms)
+	return append(orgs, c.occupier)
 }
 
-func (c *Cell) Shuffled() []*Organism {
-	orgs := c.Organisms()
+func (c *Cell) AllShuffled() []*Organism {
+	orgs := c.All()
 	shuffled := make([]*Organism, len(orgs))
-
 	for i, j := range rand.Perm(len(orgs)) {
 		shuffled[i] = orgs[j]
 	}
@@ -43,13 +46,13 @@ func (c *Cell) Shuffled() []*Organism {
 }
 
 func (c *Cell) Exists(org *Organism) bool {
-	if org.Walkable() {
-		if c.occupier.id == org.id {
+	if !org.Walkable() {
+		if c.occupier.ID() == org.ID() {
 			return true
 		}
 	} else {
-		for id := range c.indexes {
-			if id == org.id {
+		for id := range c.stack.indexes {
+			if id == org.ID() {
 				return true
 			}
 		}
@@ -57,33 +60,72 @@ func (c *Cell) Exists(org *Organism) bool {
 	return false
 }
 
-func (c *Cell) Add(org *Organism) (exec func(), ok bool) {
-	if org.Walkable() {
-		if !c.Occupied() {
-			exec = func() { c.occupier = org }
-			ok = true
+func (c *Cell) Add(org *Organism) (exec action, ok bool) {
+	if !org.Walkable(){
+		if c.Occupied() {
+			return
 		}
-	} else {
-		exec = func() {
-			c.indexes[org.id] = len(c.walkables)
-			c.walkables = append(c.walkables, org)
+
+		index := c.stack.indexes[org.ID()]
+		exec, ok = c.setAt(index, org)
+		if !ok {
+			return
 		}
-		ok = true
 	}
+
+	exec = chain(exec, func() {
+		index := len(c.stack.organisms)
+		c.stack.organisms = append(c.stack.organisms, org)
+		c.stack.indexes[org.ID()] = index
+	})
+	ok = true
 	return
 }
 
-func (c *Cell) Remove(org *Organism) (exec func(), ok bool) {
+//func (c *Cell) setOccupier(org *Organism) (exec action, ok bool) {
+//	prevOrg := c.occupier
+//	index := c.stack.indexes[prevOrg.ID()]
+//	exec, ok = c.removeIndex(index)
+//	if !ok {
+//		return
+//	}
+//
+//	exec = chain(exec, func() {
+//		c.stack.indexes[org.ID()] = index
+//		delete(c.stack.indexes, prevOrg.ID())
+//		c.occupier = org
+//	})
+//	ok = true
+//	return
+//}
+//
+//func (c *Cell) setOccupier(org *Organism) (exec action, ok bool) {
+//	prevOrg := c.occupier
+//	index := c.stack.indexes[prevOrg.ID()]
+//	exec, ok = c.setAt(index, org)
+//	if !ok {
+//		return
+//	}
+//
+//	exec = chain(exec, func() {
+//		c.stack.indexes[org.ID()] = index
+//		delete(c.stack.indexes, prevOrg.ID())
+//		c.occupier = org
+//	})
+//	ok = true
+//	return
+//}
+
+func (c *Cell) Remove(org *Organism) (exec action, ok bool) {
 	if org.Walkable() {
-		if c.occupier.id == org.id {
+		if c.occupier.ID() == org.ID() {
 			exec = func() { c.occupier = nil }
 			ok = true
 		}
 	} else {
-		for id, index := range c.indexes {
-			if id == org.id {
-				exec = func() { c.delWalkable(index) }
-				ok = true
+		for id, index := range c.stack.indexes {
+			if id == org.ID() {
+				exec, ok = c.removeIndex(index)
 				break
 			}
 		}
@@ -91,9 +133,46 @@ func (c *Cell) Remove(org *Organism) (exec func(), ok bool) {
 	return
 }
 
-func (c *Cell) delWalkable(i int) {
-	copy(c.walkables[i:], c.walkables[i+1:])
-	z := len(c.walkables) - 1
-	c.walkables[z] = nil
-	c.walkables = c.walkables[:z]
+func (c *Cell) setAt(i int, org *Organism) (exec action, ok bool) {
+	exec, ok = c.removeIndex(i)
+	if !ok {
+		return
+	}
+
+	exec = chain(exec, func() {
+		c.stack.indexes[org.ID()] = i
+	})
+	ok = true
+	return
+
+}
+
+func (c *Cell) removeOrg(id OrganismID) (exec action, ok bool) {
+	index, ok := c.stack.indexes[id]
+	if !ok {
+		return
+	}
+	exec, ok = c.removeIndex(index)
+	if !ok {
+		return
+	}
+	exec = chain(exec, func() {
+		if id == c.occupier.ID() {
+			c.occupier = nil
+		}
+		delete(c.stack.indexes, id)
+	})
+	ok = true
+	return
+}
+
+func (c *Cell) removeIndex(i int) (exec action, ok bool) {
+	exec = func() {
+		copy(c.stack.organisms[i:], c.stack.organisms[i+1:])
+		z := len(c.stack.organisms) - 1
+		c.stack.organisms[z] = nil
+		c.stack.organisms = c.stack.organisms[:z]
+	}
+	ok = true
+	return
 }

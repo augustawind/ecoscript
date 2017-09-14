@@ -1,32 +1,31 @@
 package main
 
-const (
-	emptyTileDisplay = " "
-)
+var nothing = NewOrganism(&Attributes{
+	Symbol: " ",
+})
 
-func (l *Layer) Display() (display string) {
+func (l *Layer) Display() string {
+	var result string
 	for y := 0; y < l.Height(); y++ {
 		for x := 0; x < l.Width(); x++ {
 			vec := Vec2D(x, y)
 			cell := l.Cell(vec)
-			display += cell.Display()
+			result += cell.Display()
 		}
-		display += "\n"
+		result += "\n"
 	}
-	return display
+	return result
 }
 
 func (c *Cell) Display() string {
-	if c.cover != nil {
-		return c.cover.Display()
+	var org *Organism
+	stack := c.All()
+	if len(stack) > 0 {
+		org = stack[len(stack)-1]
+	} else {
+		org = nothing
 	}
-	if c.occupier != nil {
-		return c.occupier.Display()
-	}
-	if len(c.walkables) > 0 {
-		return c.walkables[len(c.walkables)-1].Display()
-	}
-	return emptyTileDisplay
+	return org.Display()
 }
 
 func (o *Organism) Display() string {

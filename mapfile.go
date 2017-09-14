@@ -256,8 +256,7 @@ func (m *Mapfile) ToWorld() *World {
 				data := m.Organisms[key]
 				org := NewOrganism(data.Attrs).
 					AddClasses(data.Classes...).
-					AddAbilities(data.Abilities...).
-					Init()
+					AddAbilities(data.Abilities...)
 
 				exec, ok := layer.Add(org, Vec2D(x, y))
 				if !ok {

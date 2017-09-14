@@ -36,19 +36,19 @@ type Space interface {
 
 	// Add attempts to add an Organism at the given Vector.
 	// It returns true if it succeeded or false if it wasn't found.
-	Add(org *Organism, vec Vector) (func(), bool)
+	Add(org *Organism, vec Vector) (action, bool)
 
 	// Remove attempts to remove an Organism at the given Vector.
 	// It returns true if it succeeded or false if it wasn't found.
-	Remove(org *Organism, vec Vector) (func(), bool)
+	Remove(org *Organism, vec Vector) (action, bool)
 
 	// Remove attempts to remove and kill an Organism at the given Vector.
 	// It returns true if it succeeded or false if it wasn't found.
-	Kill(org *Organism, vec Vector) (func(), bool)
+	Kill(org *Organism, vec Vector) (action, bool)
 
 	// Move attempts to move an Organism from one Vector to another
 	// It returns true if it succeeded or false if it wasn't found.
-	Move(org *Organism, src Vector, dst Vector) (func(), bool)
+	Move(org *Organism, src Vector, dst Vector) (action, bool)
 }
 
 func SpaceInBounds(s Space, vec Vector) bool {
@@ -85,17 +85,17 @@ func SpaceRandWalkable(s Space, origin Vector, radius int) Vector {
 	return vectors[index]
 }
 
-func SpaceAdd(s Space, organism *Organism, vec Vector) (exec func(), ok bool) {
+func SpaceAdd(s Space, organism *Organism, vec Vector) (exec action, ok bool) {
 	cell := s.Cell(vec)
 	return cell.Add(organism)
 }
 
-func SpaceRemove(s Space, organism *Organism, vec Vector) (exec func(), ok bool) {
+func SpaceRemove(s Space, organism *Organism, vec Vector) (exec action, ok bool) {
 	cell := s.Cell(vec)
 	return cell.Remove(organism)
 }
 
-func SpaceMove(s Space, organism *Organism, src Vector, dst Vector) (exec func(), ok bool) {
+func SpaceMove(s Space, organism *Organism, src Vector, dst Vector) (exec action, ok bool) {
 	oldCell := s.Cell(src)
 	newCell := s.Cell(dst)
 	execAdd, okAdd := newCell.Add(organism)
@@ -108,11 +108,24 @@ func SpaceMove(s Space, organism *Organism, src Vector, dst Vector) (exec func()
 	return
 }
 
-func SpaceKill(s Space, organism *Organism, vec Vector) (exec func(), ok bool) {
+func SpaceKill(s Space, organism *Organism, vec Vector) (exec action, ok bool) {
 	// TODO: implement corpses
 	execRm, ok := s.Remove(organism, vec)
 	if ok {
 		exec = chain(execRm, organism.EndLife)
 	}
 	return
+}
+
+type action func()
+
+func chain(actions ...action) action {
+	return func() {
+		for i := range actions {
+			if exec := actions[i]; exec != nil {
+				exec()
+			}
+		}
+	}
+
 }

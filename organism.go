@@ -38,13 +38,12 @@ func NewOrganism(attrs *Attributes) *Organism {
 	abilities := make([]*Ability, 0)
 	classes := make([]Class, 0)
 	*lastOrganismID++
-	org := Organism{
+	return &Organism{
 		id:         *lastOrganismID,
 		Attrs:      attrs,
 		Classes:    classes,
 		Abilities:  abilities,
 	}
-	return &org
 }
 
 func (o *Organism) AddAbilities(abilities ...*Ability) *Organism {
@@ -57,10 +56,6 @@ func (o *Organism) AddAbilities(abilities ...*Ability) *Organism {
 
 func (o *Organism) AddClasses(classes ...Class) *Organism {
 	o.Classes = append(o.Classes, classes...)
-	return o
-}
-
-func (o *Organism) Init() *Organism {
 	return o
 }
 
@@ -121,7 +116,11 @@ func (o *Organism) NextMove(world *World, vec Vector, timeUnits *int, unusedAbil
 }
 
 // ---------------------------------------------------------------------
-// Ability API.
+// Behavior API.
+
+func (o *Organism) ID() OrganismID {
+	return o.id
+}
 
 func (o *Organism) Transfer(energy int) bool {
 	o.Attrs.Energy += energy

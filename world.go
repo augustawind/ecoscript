@@ -96,19 +96,19 @@ func (w *World) RandWalkable(origin Vector, radius int) Vector {
 	return SpaceRandWalkable(w, origin, radius)
 }
 
-func (w *World) Add(organism *Organism, vec Vector) (exec func(), ok bool) {
+func (w *World) Add(organism *Organism, vec Vector) (exec action, ok bool) {
 	return SpaceAdd(w, organism, vec)
 }
 
-func (w *World) Remove(organism *Organism, vec Vector) (exec func(), ok bool) {
+func (w *World) Remove(organism *Organism, vec Vector) (exec action, ok bool) {
 	return SpaceRemove(w, organism, vec)
 }
 
-func (w *World) Move(organism *Organism, src Vector, dst Vector) (exec func(), ok bool) {
+func (w *World) Move(organism *Organism, src Vector, dst Vector) (exec action, ok bool) {
 	return SpaceMove(w, organism, src, dst)
 }
 
-func (w *World) Kill(organism *Organism, vec Vector) (exec func(), ok bool) {
+func (w *World) Kill(organism *Organism, vec Vector) (exec action, ok bool) {
 	return SpaceKill(w, organism, vec)
 }
 
@@ -164,18 +164,18 @@ func (l *Layer) RandWalkable(origin Vector, radius int) Vector {
 	return SpaceRandWalkable(l, origin, radius)
 }
 
-func (l *Layer) Add(organism *Organism, vec Vector) (exec func(), ok bool) {
+func (l *Layer) Add(organism *Organism, vec Vector) (exec action, ok bool) {
 	return SpaceAdd(l, organism, vec)
 }
 
-func (l *Layer) Remove(organism *Organism, vec Vector) (exec func(), ok bool) {
+func (l *Layer) Remove(organism *Organism, vec Vector) (exec action, ok bool) {
 	return SpaceRemove(l, organism, vec)
 }
 
-func (l *Layer) Move(organism *Organism, src Vector, dst Vector) (exec func(), ok bool) {
+func (l *Layer) Move(organism *Organism, src Vector, dst Vector) (exec action, ok bool) {
 	return SpaceMove(l, organism, src, dst)
 }
 
-func (l *Layer) Kill(organism *Organism, vec Vector) (exec func(), ok bool) {
+func (l *Layer) Kill(organism *Organism, vec Vector) (exec action, ok bool) {
 	return SpaceKill(l, organism, vec)
 }
