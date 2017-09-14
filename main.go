@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"fmt"
 )
 
 func main() {
@@ -11,6 +12,6 @@ func main() {
 	}
 
 	world := mapfile.ToWorld()
-	log.Println(world.Layer(0).Display())
+	fmt.Println(world.Layer(0).Display())
 }
 

@@ -33,7 +33,7 @@ func (w *World) addLayer(z int, name string) *Layer {
 	nCells := width * height
 	cells := make([]*Cell, nCells)
 	for i := range cells {
-		cells[i] = new(Cell)
+		cells[i] = newCell()
 	}
 
 	layer := &Layer{

@@ -13,6 +13,12 @@ type Cell struct {
 	depths    map[OrganismID]int
 }
 
+func newCell() *Cell {
+	cell := new(Cell)
+	cell.depths = make(map[OrganismID]int)
+	return cell
+}
+
 func (c *Cell) Occupied() bool {
 	return c.occupier != nil
 }

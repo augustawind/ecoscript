@@ -7,6 +7,7 @@ import (
 	multierror "github.com/hashicorp/go-multierror"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
+	"log"
 )
 
 // Mapfile is the Settings object that a Mapfile will be marshaled into.
@@ -258,7 +259,11 @@ func (m *Mapfile) ToWorld() *World {
 					AddAbilities(data.Abilities...).
 					Init()
 
-				layer.Add(org, Vec2D(x, y))
+				exec, ok := layer.Add(org, Vec2D(x, y))
+				if !ok {
+					log.Printf("couldn't add an organism to a layer")
+				}
+				exec()
 			}
 		}
 	}
