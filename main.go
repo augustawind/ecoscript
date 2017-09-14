@@ -7,7 +7,7 @@ import (
 func main() {
 	mapfile := ParseMapfile("examples/Mapfile")
 	spew.Dump(mapfile)
-	err := mapfile.Validate()
+	err := mapfile.Sanitize()
 	spew.Dump(err)
 }
 

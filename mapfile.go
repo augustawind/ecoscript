@@ -20,7 +20,7 @@ type Mapfile struct {
 	Atlas struct {
 		Map struct {
 			grid [][]string
-			Text string `mapstructure:"text"`
+			Inline string `mapstructure:"inline"`
 			File string `mapstructure:"file"`
 		} `mapstructure:"map"`
 
@@ -49,35 +49,35 @@ func ParseMapfile(path string) (mapfile Mapfile) {
 
 	v.SetConfigFile(path)
 	v.SetConfigType("yaml")
-	err := v.ReadInConfig()
-	if err != nil {
+	if err := v.ReadInConfig(); err != nil {
 		log.Fatal(errors.Wrapf(err, "error reading Mapfile '%s'", path))
 	}
 
-	err = v.Unmarshal(&mapfile)
-	if err != nil {
+	if err := v.Unmarshal(&mapfile); err != nil {
 		log.Fatal(errors.Wrap(err, "error unmarshaling config"))
 	}
 
-	err = mapfile.Validate()
-	if err != nil {
+	if err := mapfile.Sanitize(); err != nil {
 		log.Fatal(err)
 	}
 	return
 }
 
-func (m Mapfile) Validate() (err error) {
-	var mapText string
-	mapRawGiven := len(m.Atlas.Map.Text) > 0
+func (m Mapfile) Sanitize() (err error) {
+	// Assert exactly one map source is provided
+	mapRawGiven := len(m.Atlas.Map.Inline) > 0
 	mapLinkGiven := len(m.Atlas.Map.File) > 0
 	if !(mapRawGiven || mapLinkGiven) {
-		return errors.New("one of ``atlas.map.text`` or ``atlas.map.file`` must be present")
+		return errors.New("one of ``atlas.map.inline`` or ``atlas.map.file`` must be present")
 	}
 	if mapRawGiven && mapLinkGiven {
-		return errors.New("``atlas.map.text`` and ``atlas.map.file`` cannot both be present")
+		return errors.New("``atlas.map.inline`` and ``atlas.map.file`` cannot both be present")
 	}
+
+	// Read map into grid
+	var mapText string
 	if mapRawGiven {
-		mapText = m.Atlas.Map.Text
+		mapText = m.Atlas.Map.Inline
 	} else {
 		bytes, err := ioutil.ReadFile(m.Atlas.Map.File)
 		if err != nil {
@@ -87,27 +87,23 @@ func (m Mapfile) Validate() (err error) {
 	}
 	m.Atlas.Map.grid = gridify(mapText)
 
+	// Validate map/legend relationship
 	if len(m.Atlas.Legend) == 0 {
 		return errors.New("``atlas.legend`` must have at least one entry")
 	}
-	err = m.validateMap(mapText)
-	if err != nil {
+	if err = m.validateMap(mapText); err != nil {
 		return
 	}
 
+	// Validate legend/organism relationship
 	if len(m.Organisms) == 0 {
 		return errors.New("``organisms`` must have at least one entry")
 	}
-	err = m.validateLegend()
-	if err != nil {
+	if err = m.validateLegend(); err != nil {
 		return
 	}
 
 	err = m.validateEcology()
-	if err != nil {
-		return
-	}
-
 	return
 }
 
