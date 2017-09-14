@@ -36,7 +36,7 @@ type Mapfile struct {
 
 type OrganismData struct {
 	*Organism
-	Abilities []*Ability
+	Abilities []*Ability `mapstructure:"abilities"`
 }
 
 // ParseMapfile reads and parses a Mapfile given a path.
