@@ -75,12 +75,6 @@ func (v Vector) Flatten(nRows int) int {
 	return v.X + (v.Y * nRows)
 }
 
-// Unflatten returns a 2-D Vector from an index and a grid with the given
-// dimensions. It is the inverse of Flatten.
-func Unflatten(i int, width int, height int) Vector {
-	return Vec2D(i%width, i%height)
-}
-
 // Radius returns the surrounding Vectors by the given radius.
 func (v Vector) Radius(radius int) []Vector {
 	n := (2*radius + 1) ^ 2 - 1

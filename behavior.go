@@ -61,23 +61,6 @@ func (abl *Ability) Execute(wld *World, org *Organism, vec Vector) (delay int, e
 	return behavior.Execute(abl, wld, org, vec)
 }
 
-//func UnmarshalBehavior(name string, properties *viper.Viper) (behavior Behavior, err error) {
-//	switch name {
-//	case "grow":
-//		behavior = new(Grow)
-//	case "eat":
-//		behavior = new(Eat)
-//	case "flow":
-//		behavior = new(Flow)
-//	case "wander":
-//		behavior = new(Wander)
-//	default:
-//		panic(errors.Errorf("unexpected behavior name \"%s\"", name)) // FIXME
-//	}
-//	err = properties.UnmarshalExact(&behavior)
-//	return
-//}
-
 // ---------------------------------------------------------------------
 // Behavior: Grow
 

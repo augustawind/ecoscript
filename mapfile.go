@@ -2,7 +2,6 @@ package main
 
 import (
 	"io/ioutil"
-	"log"
 	"strings"
 
 	multierror "github.com/hashicorp/go-multierror"
@@ -21,8 +20,8 @@ type Mapfile struct {
 		Map struct {
 			layers     [][][]string
 			layerNames []string
-			Inline     []atlasLayer `mapstructure:"inline"`
-			Files      []atlasLayer `mapstructure:"files"`
+			Inline     []*atlasLayer `mapstructure:"inline"`
+			Files      []*atlasLayer `mapstructure:"files"`
 		} `mapstructure:"map"`
 
 		Legend map[string]string `mapstructure:"legend"`
@@ -32,8 +31,7 @@ type Mapfile struct {
 		Classes []Class `mapstructure:"classes"`
 	} `mapstructure:"ecology"`
 
-	Organisms map[string]atlasOrganism `mapstructure:"organisms"`
-	organisms map[string]*Organism
+	Organisms map[string]*Organism `mapstructure:"organisms"`
 }
 
 type atlasLayer struct {
@@ -41,13 +39,8 @@ type atlasLayer struct {
 	Grid string `mapstructure:"grid"`
 }
 
-type atlasOrganism struct {
-	*Organism
-	Abilities []*Ability `mapstructure:"abilities"`
-}
-
 // ParseMapfile reads and parses a Mapfile given a path.
-func ParseMapfile(path string) (mapfile Mapfile) {
+func ParseMapfile(path string) (mapfile *Mapfile, err error) {
 	v := viper.New()
 	v.SetTypeByDefaultValue(true)
 
@@ -56,21 +49,23 @@ func ParseMapfile(path string) (mapfile Mapfile) {
 
 	v.SetConfigFile(path)
 	v.SetConfigType("yaml")
-	if err := v.ReadInConfig(); err != nil {
-		log.Fatal(errors.Wrapf(err, "error reading Mapfile '%s'", path))
+	if err = v.ReadInConfig(); err != nil {
+		err = errors.Wrapf(err, "error reading Mapfile '%s'", path)
+		return
 	}
 
-	if err := v.Unmarshal(&mapfile); err != nil {
-		log.Fatal(errors.Wrap(err, "error unmarshaling config"))
+	if err = v.Unmarshal(&mapfile); err != nil {
+		err = errors.Wrap(err, "error unmarshaling config")
+		return
 	}
 
-	if err := mapfile.Sanitize(); err != nil {
-		log.Fatal(err)
+	if err = mapfile.Sanitize(); err != nil {
+		return
 	}
 	return
 }
 
-func (m Mapfile) Sanitize() (err error) {
+func (m *Mapfile) Sanitize() (err error) {
 	// Assert exactly one map source is provided
 	mapSourceInline := len(m.Atlas.Map.Inline) > 0
 	mapSourceFiles := len(m.Atlas.Map.Files) > 0
@@ -82,24 +77,34 @@ func (m Mapfile) Sanitize() (err error) {
 	}
 
 	// Read map into layered grid
+	var depth int
 	var layers []string
 	var layerNames []string
 
 	if mapSourceInline {
-		layers := make([]string, len(m.Atlas.Map.Inline))
-		copy(layerNames, layers)
+		depth = len(m.Atlas.Map.Inline)
+		layers = make([]string, depth)
+		layerNames = make([]string, depth)
+
+		for z := range m.Atlas.Map.Inline {
+			data := m.Atlas.Map.Inline[z]
+			layers[z] = data.Grid
+			layerNames[z] = data.Name
+		}
 
 	} else {
-		layers := make([]string, len(m.Atlas.Map.Files))
-		copy(layerNames, layers)
+		depth = len(m.Atlas.Map.Files)
+		layers = make([]string, depth)
+		layerNames = make([]string, depth)
 
-		for z, layerData := range m.Atlas.Map.Files {
-			bytes, err := ioutil.ReadFile(layerData.Grid)
+		for z := range m.Atlas.Map.Files {
+			data := m.Atlas.Map.Files[z]
+			bytes, err := ioutil.ReadFile(data.Grid)
 			if err != nil {
 				return errors.Wrap(err, "error reading ``atlas.map.files``")
 			}
 			layers[z] = string(bytes)
-			layerNames[z] = layerData.Name
+			layerNames[z] = data.Name
 		}
 	}
 	m.Atlas.Map.layers = gridify(layers)
@@ -121,7 +126,9 @@ func (m Mapfile) Sanitize() (err error) {
 		return
 	}
 
-	err = m.validateClasses()
+	if err = m.validateClasses(); err != nil {
+		return
+	}
 	return
 }
 
@@ -138,7 +145,7 @@ func gridify(layers []string) [][][]string {
 	return stack
 }
 
-func (m Mapfile) validateMapLegend(mapLayers []string) error {
+func (m *Mapfile) validateMapLegend(mapLayers []string) error {
 	for _, layer := range m.Atlas.Map.layers {
 		for _, row := range layer {
 			for _, char := range row {
@@ -155,7 +162,7 @@ func (m Mapfile) validateMapLegend(mapLayers []string) error {
 	return nil
 }
 
-func (m Mapfile) validateLegendOrganisms() error {
+func (m *Mapfile) validateLegendOrganisms() error {
 	for _, key := range m.Atlas.Legend {
 		_, ok := m.Organisms[key]
 		if !ok {
@@ -165,7 +172,7 @@ func (m Mapfile) validateLegendOrganisms() error {
 	return nil
 }
 
-func (m Mapfile) validateClasses() error {
+func (m *Mapfile) validateClasses() error {
 	var result error
 	classes := m.Ecology.Classes
 	if classes != nil && len(classes) > 0 {
@@ -178,7 +185,7 @@ func (m Mapfile) validateClasses() error {
 	return result
 }
 
-func (m Mapfile) validateOrganismAttrs() error {
+func (m *Mapfile) validateOrganismAttrs() error {
 	var result error
 	for _, orgData := range m.Organisms {
 		if err := vStringMinLen(orgData.Attrs.Name, 2, "name"); err != nil {
@@ -226,28 +233,32 @@ func vIntMinVal(val int, min int, key string) (err error) {
 	return
 }
 
-func (m Mapfile) ToWorld() *World {
+func (m *Mapfile) ToWorld() *World {
 	atlasLayers := m.Atlas.Map.layers
 	layerNames := m.Atlas.Map.layerNames
 
-	depth := len(atlasLayers)
 	height := len(atlasLayers[0])
 	width := len(atlasLayers[0][0])
-	world := NewWorld(width, height, depth)
+	world := NewWorld(width, height, layerNames)
 
-	for z := 0; z < depth; z++ {
-		layer := world.NewLayer(layerNames[z])
+	for z := range atlasLayers {
+		layer := world.Layer(z)
 
 		for y := 0; y < height; y++ {
 			for x := 0; x < width; x++ {
 				symbol := atlasLayers[z][y][x]
+				if symbol == m.Defaults.EmptyTile {
+					continue
+				}
+
 				key := m.Atlas.Legend[symbol]
 				data := m.Organisms[key]
-				organism := NewOrganism(data.Attrs).
+				org := NewOrganism(data.Attrs).
 					AddClasses(data.Classes...).
-					AddAbilities(data.Abilities...)
+					AddAbilities(data.Abilities...).
+					Init()
 
-				layer.Add(organism, Vec2D(x, y))
+				layer.Add(org, Vec2D(x, y))
 			}
 		}
 	}

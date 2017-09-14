@@ -4,8 +4,7 @@ const (
 	emptyTileDisplay = " "
 )
 
-func (l *Layer) Display() string {
-	display := ""
+func (l *Layer) Display() (display string) {
 	for y := 0; y < l.Height(); y++ {
 		for x := 0; x < l.Width(); x++ {
 			vec := Vec2D(x, y)

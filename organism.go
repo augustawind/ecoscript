@@ -11,13 +11,16 @@ const (
 
 type OrganismID int
 
-var nextOrganismID OrganismID = 0
+var (
+	oid            OrganismID  = -1
+	lastOrganismID *OrganismID = &oid
+)
 
 type Organism struct {
-	id        OrganismID
-	Attrs     *Attributes `mapstructure:"attributes"`
-	Classes   []Class     `mapstructure:"classes"`
-	Abilities AbilityMap  `mapstructure:"abilities"`
+	id         OrganismID
+	Attrs      *Attributes `mapstructure:"attributes"`
+	Classes    []Class     `mapstructure:"classes"`
+	Abilities  []*Ability  `mapstructure:"abilities"`
 }
 
 type Attributes struct {
@@ -29,27 +32,25 @@ type Attributes struct {
 	Mass     int    `mapstructure:"mass"`
 }
 
-type AbilityMap map[string]*Ability
-
 type Class string
 
 func NewOrganism(attrs *Attributes) *Organism {
-	abilities := make(AbilityMap)
+	abilities := make([]*Ability, 0)
 	classes := make([]Class, 0)
-	organism := &Organism{
-		id:        nextOrganismID,
-		Attrs:     attrs,
-		Abilities: abilities,
-		Classes:   classes,
+	*lastOrganismID++
+	org := Organism{
+		id:         *lastOrganismID,
+		Attrs:      attrs,
+		Classes:    classes,
+		Abilities:  abilities,
 	}
-	nextOrganismID++
-	return organism
+	return &org
 }
 
 func (o *Organism) AddAbilities(abilities ...*Ability) *Organism {
 	for i := range abilities {
 		ability := abilities[i]
-		o.Abilities[ability.Name] = ability
+		o.Abilities = append(o.Abilities, ability)
 	}
 	return o
 }
@@ -67,7 +68,8 @@ func (o *Organism) Act(world *World, vec Vector) {
 	t := baseTimeUnits
 	timeUnits := &t
 
-	unusedAbilities := make([]*Ability, len(o.Abilities))
+	var unusedAbilities []*Ability
+	copy(unusedAbilities, o.Abilities)
 	for _, ability := range o.Abilities {
 		unusedAbilities = append(unusedAbilities, ability)
 	}

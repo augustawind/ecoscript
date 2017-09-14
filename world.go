@@ -6,20 +6,27 @@ package main
 type World struct {
 	width  int
 	height int
+	depth  int
 	layers []*Layer
 }
 
-func NewWorld(width, height, depth int) *World {
+func NewWorld(width, height int, layerNames []string) *World {
+	depth := len(layerNames)
 	layers := make([]*Layer, depth)
 
-	return &World{
+	world := &World{
 		width:  width,
 		height: height,
+		depth: depth,
 		layers: layers,
 	}
+	for z, name := range layerNames {
+		world.addLayer(z, name)
+	}
+	return world
 }
 
-func (w *World) NewLayer(name string) *Layer {
+func (w *World) addLayer(z int, name string) *Layer {
 	width := w.Width()
 	height := w.Height()
 
@@ -33,15 +40,15 @@ func (w *World) NewLayer(name string) *Layer {
 		name:   name,
 		width:  width,
 		height: height,
-		depth:  w.Depth(),
+		depth:  w.depth,
 		cells:  cells,
 	}
-	w.layers = append(w.layers, layer)
+	w.layers[z] = layer
 	return layer
 }
 
-func (w *World) Layer(layer int) *Layer {
-	return w.layers[layer]
+func (w *World) Layer(z int) *Layer {
+	return w.layers[z]
 }
 
 func (w *World) Width() int {
@@ -53,7 +60,7 @@ func (w *World) Height() int {
 }
 
 func (w *World) Depth() int {
-	return len(w.layers)
+	return w.depth
 }
 
 func (w *World) Cell(vec Vector) *Cell {

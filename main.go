@@ -1,13 +1,16 @@
 package main
 
 import (
-	"github.com/davecgh/go-spew/spew"
+	"log"
 )
 
 func main() {
-	mapfile := ParseMapfile("examples/Mapfile")
-	spew.Dump(mapfile)
-	err := mapfile.Sanitize()
-	spew.Dump(err)
+	mapfile, err := ParseMapfile("examples/Mapfile")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	world := mapfile.ToWorld()
+	log.Println(world.Layer(0).Display())
 }
 
