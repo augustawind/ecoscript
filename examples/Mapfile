@@ -45,8 +45,8 @@ ecology:
 organisms:
 
   pine_tree:
-    stats:
-      name: 'pine tree'
+    attributes:
+      name: pine tree
       symbol: '$'
       walkable: false
       energy: 50

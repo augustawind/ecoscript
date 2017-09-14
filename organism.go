@@ -15,7 +15,7 @@ var nextOrganismID OrganismID = 0
 
 type Organism struct {
 	id        OrganismID
-	Stats     *Attributes `mapstructure:"stats"`
+	Attrs     *Attributes `mapstructure:"attributes"`
 	Classes   []Class     `mapstructure:"classes"`
 	Abilities AbilityMap  `mapstructure:"abilities"`
 }
@@ -38,7 +38,7 @@ func NewOrganism(attrs *Attributes) *Organism {
 	classes := make([]Class, 0)
 	organism := &Organism{
 		id:        nextOrganismID,
-		Stats:     attrs,
+		Attrs:     attrs,
 		Abilities: abilities,
 		Classes:   classes,
 	}
@@ -78,7 +78,7 @@ func (o *Organism) Act(world *World, vec Vector) {
 			execKill, ok := world.Kill(o, vec)
 			if !ok {
 				// TODO: figure out how to handle ok=false here
-				log.Panicf("organism '%s' died, but Kill() failed unexpectedly", o.Stats.Name)
+				log.Panicf("organism '%s' died, but Kill() failed unexpectedly", o.Attrs.Name)
 			}
 			execKill()
 			break
@@ -122,22 +122,22 @@ func (o *Organism) NextMove(world *World, vec Vector, timeUnits *int, unusedAbil
 // Ability API.
 
 func (o *Organism) Transfer(energy int) bool {
-	o.Stats.Energy += energy
+	o.Attrs.Energy += energy
 	return o.Alive()
 }
 
 func (o *Organism) Biomass() int {
-	return o.Stats.Size * o.Stats.Mass
+	return o.Attrs.Size * o.Attrs.Mass
 }
 
 func (o *Organism) Alive() bool {
-	return o.Stats.Energy > 0
+	return o.Attrs.Energy > 0
 }
 
 func (o *Organism) Walkable() bool {
-	return o.Stats.Walkable
+	return o.Attrs.Walkable
 }
 
 func (o *Organism) EndLife() {
-	o.Stats.Energy = 0
+	o.Attrs.Energy = 0
 }

@@ -91,7 +91,7 @@ func (m Mapfile) Sanitize() (err error) {
 	if len(m.Atlas.Legend) == 0 {
 		return errors.New("``atlas.legend`` must have at least one entry")
 	}
-	if err = m.validateMap(mapText); err != nil {
+	if err = m.validateMapLegend(mapText); err != nil {
 		return
 	}
 
@@ -99,11 +99,11 @@ func (m Mapfile) Sanitize() (err error) {
 	if len(m.Organisms) == 0 {
 		return errors.New("``organisms`` must have at least one entry")
 	}
-	if err = m.validateLegend(); err != nil {
+	if err = m.validateLegendOrganisms(); err != nil {
 		return
 	}
 
-	err = m.validateEcology()
+	err = m.validateClasses()
 	return
 }
 
@@ -116,7 +116,7 @@ func gridify(s string) [][]string {
 	return grid
 }
 
-func (m Mapfile) validateMap(mapText string) error {
+func (m Mapfile) validateMapLegend(mapText string) error {
 	for _, row := range m.Atlas.Map.grid {
 		for _, char := range row {
 			if char == m.Defaults.EmptyTile {
@@ -132,7 +132,7 @@ func (m Mapfile) validateMap(mapText string) error {
 	return nil
 }
 
-func (m Mapfile) validateLegend() error {
+func (m Mapfile) validateLegendOrganisms() error {
 	for _, key := range m.Atlas.Legend {
 		_, ok := m.Organisms[key]
 		if !ok {
@@ -142,7 +142,7 @@ func (m Mapfile) validateLegend() error {
 	return nil
 }
 
-func (m Mapfile) validateEcology() error {
+func (m Mapfile) validateClasses() error {
 	var result error
 	classes := m.Ecology.Classes
 	if classes != nil && len(classes) > 0 {
@@ -155,19 +155,19 @@ func (m Mapfile) validateEcology() error {
 	return result
 }
 
-func (m Mapfile) validateOrganisms() error {
+func (m Mapfile) validateOrganismAttrs() error {
 	var result error
 	for _, organism := range m.Organisms {
-		if err := vStringMinLen(organism.Stats.Name, 2, "name"); err != nil {
+		if err := vStringMinLen(organism.Attrs.Name, 2, "name"); err != nil {
 			result = multierror.Append(result, err)
 		}
-		if err := vIntMinVal(organism.Stats.Energy, 1, "energy"); err != nil {
+		if err := vIntMinVal(organism.Attrs.Energy, 1, "energy"); err != nil {
 			result = multierror.Append(result, err)
 		}
-		if err := vIntMinVal(organism.Stats.Size, 1, "size"); err != nil {
+		if err := vIntMinVal(organism.Attrs.Size, 1, "size"); err != nil {
 			result = multierror.Append(result, err)
 		}
-		if err := vIntMinVal(organism.Stats.Mass, 1, "mass"); err != nil {
+		if err := vIntMinVal(organism.Attrs.Mass, 1, "mass"); err != nil {
 			result = multierror.Append(result, err)
 		}
 		if organism.Classes != nil && len(organism.Classes) > 0 {
