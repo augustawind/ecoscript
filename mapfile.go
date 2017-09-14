@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Mapfile is the Settings object that a Mapfile will be marshalled into.
+// Mapfile is the Settings object that a Mapfile will be marshaled into.
 type Mapfile struct {
 	Defaults struct {
 		EmptyTile     string `mapstructure:"empty_tile"`
@@ -19,9 +19,9 @@ type Mapfile struct {
 
 	Atlas struct {
 		Map struct {
-			grid [][]string
-			Inline string `mapstructure:"inline"`
-			File string `mapstructure:"file"`
+			grid   [][][]string
+			Inline []string `mapstructure:"inline"`
+			Files  []string `mapstructure:"files"`
 		} `mapstructure:"map"`
 
 		Legend map[string]string `mapstructure:"legend"`
@@ -66,32 +66,35 @@ func ParseMapfile(path string) (mapfile Mapfile) {
 func (m Mapfile) Sanitize() (err error) {
 	// Assert exactly one map source is provided
 	mapRawGiven := len(m.Atlas.Map.Inline) > 0
-	mapLinkGiven := len(m.Atlas.Map.File) > 0
+	mapLinkGiven := len(m.Atlas.Map.Files) > 0
 	if !(mapRawGiven || mapLinkGiven) {
-		return errors.New("one of ``atlas.map.inline`` or ``atlas.map.file`` must be present")
+		return errors.New("one of ``atlas.map.inline`` or ``atlas.map.files`` must be present")
 	}
 	if mapRawGiven && mapLinkGiven {
-		return errors.New("``atlas.map.inline`` and ``atlas.map.file`` cannot both be present")
+		return errors.New("``atlas.map.inline`` and ``atlas.map.files`` cannot both be present")
 	}
 
-	// Read map into grid
-	var mapText string
+	// Read map into layered grid
+	var mapLayers []string
 	if mapRawGiven {
-		mapText = m.Atlas.Map.Inline
+		mapLayers = m.Atlas.Map.Inline
 	} else {
-		bytes, err := ioutil.ReadFile(m.Atlas.Map.File)
-		if err != nil {
-			return errors.Wrap(err, "error reading ``atlas.map.link``")
+		mapLayers := make([]string, len(m.Atlas.Map.Files))
+		for z, file := range m.Atlas.Map.Files {
+			bytes, err := ioutil.ReadFile(file)
+			if err != nil {
+				return errors.Wrap(err, "error reading ``atlas.map.files``")
+			}
+			mapLayers[z] = string(bytes)
 		}
-		mapText = string(bytes)
 	}
-	m.Atlas.Map.grid = gridify(mapText)
+	m.Atlas.Map.grid = gridify(mapLayers)
 
 	// Validate map/legend relationship
 	if len(m.Atlas.Legend) == 0 {
 		return errors.New("``atlas.legend`` must have at least one entry")
 	}
-	if err = m.validateMapLegend(mapText); err != nil {
+	if err = m.validateMapLegend(mapLayers); err != nil {
 		return
 	}
 
@@ -107,27 +110,32 @@ func (m Mapfile) Sanitize() (err error) {
 	return
 }
 
-func gridify(s string) [][]string {
-	rows := strings.Split(strings.TrimSpace(s), "\n")
-	grid := make([][]string, len(rows))
-	for y, row := range rows {
-		grid[y] = strings.Split(strings.TrimSpace(row), "")
+func gridify(layers []string) [][][]string {
+	stack := make([][][]string, len(layers))
+	for z, layer := range layers {
+		rows := strings.Split(strings.TrimSpace(layer), "\n")
+		grid := make([][]string, len(rows))
+		for y, row := range rows {
+			grid[y] = strings.Split(strings.TrimSpace(row), "")
+		}
+		stack[z] = grid
 	}
-	return grid
+	return stack
 }
 
-func (m Mapfile) validateMapLegend(mapText string) error {
-	for _, row := range m.Atlas.Map.grid {
-		for _, char := range row {
-			if char == m.Defaults.EmptyTile {
-				continue
-			}
-			_, ok := m.Atlas.Legend[char]
-			if !ok {
-				return errors.Errorf("map symbol '%s' not found in ``atlas.legend``", char)
+func (m Mapfile) validateMapLegend(mapLayers []string) error {
+	for _, layer := range m.Atlas.Map.grid {
+		for _, row := range layer {
+			for _, char := range row {
+				if char == m.Defaults.EmptyTile {
+					continue
+				}
+				_, ok := m.Atlas.Legend[char]
+				if !ok {
+					return errors.Errorf("map symbol '%s' not found in ``atlas.legend``", char)
+				}
 			}
 		}
-
 	}
 	return nil
 }
