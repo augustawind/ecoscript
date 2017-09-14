@@ -21,8 +21,8 @@ type Mapfile struct {
 		Map struct {
 			layers     [][][]string
 			layerNames []string
-			Inline     []*atlasLayer `mapstructure:"inline"`
-			Files      []*atlasLayer `mapstructure:"files"`
+			Inline     []*layerInfo `mapstructure:"inline"`
+			Files      []*layerInfo `mapstructure:"files"`
 		} `mapstructure:"map"`
 
 		Legend map[string]string `mapstructure:"legend"`
@@ -35,7 +35,7 @@ type Mapfile struct {
 	Organisms map[string]*Organism `mapstructure:"organisms"`
 }
 
-type atlasLayer struct {
+type layerInfo struct {
 	Name string `mapstructure:"name"`
 	Grid string `mapstructure:"grid"`
 }
@@ -133,17 +133,39 @@ func (m *Mapfile) Sanitize() (err error) {
 	return
 }
 
-func gridify(layers []string) [][][]string {
-	stack := make([][][]string, len(layers))
-	for z, layer := range layers {
-		rows := strings.Split(strings.TrimSpace(layer), "\n")
-		grid := make([][]string, len(rows))
-		for y, row := range rows {
-			grid[y] = strings.Split(strings.TrimSpace(row), "")
+func (m *Mapfile) ToWorld() *World {
+	atlasLayers := m.Atlas.Map.layers
+	layerNames := m.Atlas.Map.layerNames
+
+	height := len(atlasLayers[0])
+	width := len(atlasLayers[0][0])
+	world := NewWorld(width, height, layerNames)
+
+	for z := range atlasLayers {
+		layer := world.Layer(z)
+
+		for y := 0; y < height; y++ {
+			for x := 0; x < width; x++ {
+				symbol := atlasLayers[z][y][x]
+				if symbol == m.Defaults.EmptyTile {
+					continue
+				}
+
+				key := m.Atlas.Legend[symbol]
+				data := m.Organisms[key]
+				org := NewOrganism(data.Attrs).
+					AddClasses(data.Classes...).
+					AddAbilities(data.Abilities...)
+
+				exec, ok := layer.Add(org, Vec2D(x, y))
+				if !ok {
+					log.Printf("couldn't add an organism to a layer")
+				}
+				exec()
+			}
 		}
-		stack[z] = grid
 	}
-	return stack
+	return world
 }
 
 func (m *Mapfile) validateMapLegend(mapLayers []string) error {
@@ -234,37 +256,15 @@ func vIntMinVal(val int, min int, key string) (err error) {
 	return
 }
 
-func (m *Mapfile) ToWorld() *World {
-	atlasLayers := m.Atlas.Map.layers
-	layerNames := m.Atlas.Map.layerNames
-
-	height := len(atlasLayers[0])
-	width := len(atlasLayers[0][0])
-	world := NewWorld(width, height, layerNames)
-
-	for z := range atlasLayers {
-		layer := world.Layer(z)
-
-		for y := 0; y < height; y++ {
-			for x := 0; x < width; x++ {
-				symbol := atlasLayers[z][y][x]
-				if symbol == m.Defaults.EmptyTile {
-					continue
-				}
-
-				key := m.Atlas.Legend[symbol]
-				data := m.Organisms[key]
-				org := NewOrganism(data.Attrs).
-					AddClasses(data.Classes...).
-					AddAbilities(data.Abilities...)
-
-				exec, ok := layer.Add(org, Vec2D(x, y))
-				if !ok {
-					log.Printf("couldn't add an organism to a layer")
-				}
-				exec()
-			}
+func gridify(layers []string) [][][]string {
+	stack := make([][][]string, len(layers))
+	for z, layer := range layers {
+		rows := strings.Split(strings.TrimSpace(layer), "\n")
+		grid := make([][]string, len(rows))
+		for y, row := range rows {
+			grid[y] = strings.Split(strings.TrimSpace(row), "")
 		}
+		stack[z] = grid
 	}
-	return world
+	return stack
 }
