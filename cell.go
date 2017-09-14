@@ -5,17 +5,15 @@ import (
 )
 
 type Cell struct {
-	// main
-	occupier *Organism
-	// over
+	occupier  *Organism
 	cover     *Organism
 	walkables []*Organism
-	depths    map[OrganismID]int
+	indexes   map[OrganismID]int
 }
 
 func newCell() *Cell {
 	cell := new(Cell)
-	cell.depths = make(map[OrganismID]int)
+	cell.indexes = make(map[OrganismID]int)
 	return cell
 }
 
@@ -28,31 +26,30 @@ func (c *Cell) Occupier() *Organism {
 }
 
 func (c *Cell) Organisms() []*Organism {
-	organisms := make([]*Organism, len(c.walkables)+1)
-	copy(organisms, c.walkables)
-	organisms = append(organisms, c.occupier)
-	return organisms
+	orgs := make([]*Organism, len(c.walkables)+1)
+	copy(orgs, c.walkables)
+	orgs = append(orgs, c.occupier)
+	return orgs
 }
 
 func (c *Cell) Shuffled() []*Organism {
-	organisms := c.Organisms()
-	n := len(organisms)
-	shuffled := make([]*Organism, n)
+	orgs := c.Organisms()
+	shuffled := make([]*Organism, len(orgs))
 
-	for i, j := range rand.Perm(n) {
-		shuffled[i] = organisms[j]
+	for i, j := range rand.Perm(len(orgs)) {
+		shuffled[i] = orgs[j]
 	}
 	return shuffled
 }
 
-func (c *Cell) Exists(organism *Organism) bool {
-	if organism.Walkable() {
-		if c.occupier.id == organism.id {
+func (c *Cell) Exists(org *Organism) bool {
+	if org.Walkable() {
+		if c.occupier.id == org.id {
 			return true
 		}
 	} else {
-		for id := range c.depths {
-			if id == organism.id {
+		for id := range c.indexes {
+			if id == org.id {
 				return true
 			}
 		}
@@ -60,32 +57,32 @@ func (c *Cell) Exists(organism *Organism) bool {
 	return false
 }
 
-func (c *Cell) Add(organism *Organism) (exec func(), ok bool) {
-	if organism.Walkable() {
+func (c *Cell) Add(org *Organism) (exec func(), ok bool) {
+	if org.Walkable() {
 		if !c.Occupied() {
-			exec = func() { c.occupier = organism }
+			exec = func() { c.occupier = org }
 			ok = true
 		}
 	} else {
 		exec = func() {
-			c.depths[organism.id] = len(c.walkables)
-			c.walkables = append(c.walkables, organism)
+			c.indexes[org.id] = len(c.walkables)
+			c.walkables = append(c.walkables, org)
 		}
 		ok = true
 	}
 	return
 }
 
-func (c *Cell) Remove(organism *Organism) (exec func(), ok bool) {
-	if organism.Walkable() {
-		if c.occupier.id == organism.id {
+func (c *Cell) Remove(org *Organism) (exec func(), ok bool) {
+	if org.Walkable() {
+		if c.occupier.id == org.id {
 			exec = func() { c.occupier = nil }
 			ok = true
 		}
 	} else {
-		for id, depth := range c.depths {
-			if id == organism.id {
-				exec = func() { c.delWalkable(depth) }
+		for id, index := range c.indexes {
+			if id == org.id {
+				exec = func() { c.delWalkable(index) }
 				ok = true
 				break
 			}
@@ -94,8 +91,8 @@ func (c *Cell) Remove(organism *Organism) (exec func(), ok bool) {
 	return
 }
 
-func (c *Cell) delWalkable(depth int) {
-	copy(c.walkables[depth:], c.walkables[depth+1:])
+func (c *Cell) delWalkable(i int) {
+	copy(c.walkables[i:], c.walkables[i+1:])
 	z := len(c.walkables) - 1
 	c.walkables[z] = nil
 	c.walkables = c.walkables[:z]
