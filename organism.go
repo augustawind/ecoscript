@@ -116,6 +116,11 @@ func (o *Organism) NextMove(world *World, vec Vector, timeUnits *int, unusedAbil
 	unusedAbilities = unusedAbilities[1:]
 	return
 }
+//
+//func (o *Organism) chooseAbility(world *World, vec Vector) *Ability {
+//	n := rand.Intn(len(o.Abilities))
+//	return o.Abilities[n]
+//}
 
 // ---------------------------------------------------------------------
 // Behavior API.
