@@ -221,7 +221,7 @@ func (m *Mapfile) ToWorld() *World {
 				key := m.Atlas.Legend[symbol]
 				data := m.Organisms[key]
 				org := NewOrganism(data.Name, data.Symbol, data.Attrs).
-					AddClasses(data.Classes...).
+					AddClasses(data.Traits...).
 					AddAbilities(data.Abilities...)
 
 				exec, ok := layer.Add(org, Vec2D(x, y))

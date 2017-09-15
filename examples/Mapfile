@@ -38,11 +38,11 @@ atlas:
 #        grid: examples/maps/forest
 
   legend:
-    '$': 'pine_tree'
+    '$': 'pine-tree'
 
 organisms:
 
-  pine_tree:
+  pine-tree:
     name: pine tree
     symbol: '$'
 
@@ -52,12 +52,33 @@ organisms:
       size: 5
       mass: 100
 
-    classes:
-      - 'passive'
-      - 'producer'
+    traits:
+      - producer
+      - static
 
     abilities:
       - name: grow
         properties:
           rate: 10
 
+  sheep:
+    name: sheep
+    symbol: '&'
+
+    attributes:
+      walkable: false
+      energy: 50
+      size: 2
+      mass: 20
+
+    traits:
+      - consumer
+      - herbivore
+
+    abilities:
+      - name: eat
+        properties:
+          diet:
+            required:
+            preferred:
+            forbidden:

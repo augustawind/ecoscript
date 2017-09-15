@@ -54,7 +54,7 @@ func (bhv *Eat) Name() string {
 
 func (bhv *Eat) Defaults() Properties {
 	return Properties{
-		"diet": make([]Class, 0),
+		"diet":  make([]Trait, 0),
 	}
 }
 
@@ -93,10 +93,10 @@ func (bhv *Eat) Execute(abl *Ability, wld *World, org *Organism, vec Vector) (de
 }
 
 func (bhv *Eat) isEdible(abl *Ability, org *Organism) bool {
-	for i := range org.Classes {
-		class := org.Classes[i]
+	for i := range org.Traits {
+		trait := org.Traits[i]
 		for _, subjectClass := range bhv.diet(abl) {
-			if class == subjectClass {
+			if trait == subjectClass {
 				return true
 			}
 		}
@@ -104,8 +104,8 @@ func (bhv *Eat) isEdible(abl *Ability, org *Organism) bool {
 	return false
 }
 
-func (bhv *Eat) diet(abl *Ability) []Class {
-	return abl.Get("diet").([]Class)
+func (bhv *Eat) diet(abl *Ability) []Trait {
+	return abl.Get("diet").([]Trait)
 }
 
 func (bhv *Eat) consumeBiomass(biomass int) int {

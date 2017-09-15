@@ -21,7 +21,7 @@ type Organism struct {
 	Name      string      `mapstructure:"name"`
 	Symbol    string      `mapstructure:"symbol"`
 	Attrs     *Attributes `mapstructure:"attributes"`
-	Classes   []Class     `mapstructure:"classes"`
+	Traits    []Trait     `mapstructure:"traits"`
 	Abilities []*Ability  `mapstructure:"abilities"`
 }
 
@@ -32,18 +32,18 @@ type Attributes struct {
 	Mass     int  `mapstructure:"mass"`
 }
 
-type Class string
+type Trait string
 
 func NewOrganism(name, symbol string, attrs *Attributes) *Organism {
 	abilities := make([]*Ability, 0)
-	classes := make([]Class, 0)
+	traits := make([]Trait, 0)
 	*lastOrganismID++
 	return &Organism{
 		id:        *lastOrganismID,
 		Name:      name,
 		Symbol:    symbol,
 		Attrs:     attrs,
-		Classes:   classes,
+		Traits:    traits,
 		Abilities: abilities,
 	}
 }
@@ -56,8 +56,8 @@ func (o *Organism) AddAbilities(abilities ...*Ability) *Organism {
 	return o
 }
 
-func (o *Organism) AddClasses(classes ...Class) *Organism {
-	o.Classes = append(o.Classes, classes...)
+func (o *Organism) AddClasses(traits ...Trait) *Organism {
+	o.Traits = append(o.Traits, traits...)
 	return o
 }
 
@@ -116,6 +116,7 @@ func (o *Organism) NextMove(world *World, vec Vector, timeUnits *int, unusedAbil
 	unusedAbilities = unusedAbilities[1:]
 	return
 }
+
 //
 //func (o *Organism) chooseAbility(world *World, vec Vector) *Ability {
 //	n := rand.Intn(len(o.Abilities))
