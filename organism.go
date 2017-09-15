@@ -18,28 +18,30 @@ var (
 
 type Organism struct {
 	id        OrganismID
+	Name      string      `mapstructure:"name"`
+	Symbol    string      `mapstructure:"symbol"`
 	Attrs     *Attributes `mapstructure:"attributes"`
 	Classes   []Class     `mapstructure:"classes"`
 	Abilities []*Ability  `mapstructure:"abilities"`
 }
 
 type Attributes struct {
-	Name     string `mapstructure:"name"`
-	Symbol   string `mapstructure:"symbol"`
-	Walkable bool   `mapstructure:"walkable"`
-	Energy   int    `mapstructure:"energy"`
-	Size     int    `mapstructure:"size"`
-	Mass     int    `mapstructure:"mass"`
+	Walkable bool `mapstructure:"walkable"`
+	Energy   int  `mapstructure:"energy"`
+	Size     int  `mapstructure:"size"`
+	Mass     int  `mapstructure:"mass"`
 }
 
 type Class string
 
-func NewOrganism(attrs *Attributes) *Organism {
+func NewOrganism(name, symbol string, attrs *Attributes) *Organism {
 	abilities := make([]*Ability, 0)
 	classes := make([]Class, 0)
 	*lastOrganismID++
 	return &Organism{
 		id:        *lastOrganismID,
+		Name:      name,
+		Symbol:    symbol,
 		Attrs:     attrs,
 		Classes:   classes,
 		Abilities: abilities,
@@ -75,7 +77,7 @@ func (o *Organism) Act(world *World, vec Vector) {
 			execKill, ok := world.Kill(o, vec)
 			if !ok {
 				// TODO: figure out how to handle ok=false here
-				log.Panicf("organism '%s' died, but Kill() failed unexpectedly", o.Attrs.Name)
+				log.Panicf("organism '%s' died, but Kill() failed unexpectedly", o.Name)
 			}
 			execKill()
 			break

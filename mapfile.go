@@ -28,10 +28,6 @@ type Mapfile struct {
 		Legend map[string]string `mapstructure:"legend"`
 	} `mapstructure:"atlas"`
 
-	Ecology struct {
-		Classes []Class `mapstructure:"classes"`
-	} `mapstructure:"ecology"`
-
 	Organisms map[string]*Organism `mapstructure:"organisms"`
 }
 
@@ -60,14 +56,14 @@ func ParseMapfile(path string) (mapfile *Mapfile, err error) {
 		return
 	}
 
-	if err = mapfile.Sanitize(); err != nil {
+	if err = mapfile.sanitize(); err != nil {
 		return
 	}
 	return
 }
 
-func (m *Mapfile) Sanitize() (err error) {
-	// Assert exactly one map source is provided
+func (m *Mapfile) sanitize() (err error) {
+	// Validate map input sources
 	mapSourceInline := len(m.Atlas.Map.Inline) > 0
 	mapSourceFiles := len(m.Atlas.Map.Files) > 0
 	if !(mapSourceInline || mapSourceFiles) {
@@ -77,7 +73,7 @@ func (m *Mapfile) Sanitize() (err error) {
 		return errors.New("``atlas.map.inline`` and ``atlas.map.files`` cannot both be present")
 	}
 
-	// Read map into layered grid
+	// Read world map
 	var depth int
 	var layers []string
 	var layerNames []string
@@ -108,6 +104,7 @@ func (m *Mapfile) Sanitize() (err error) {
 			layerNames[z] = data.Name
 		}
 	}
+
 	m.Atlas.Map.layers = gridify(layers)
 	m.Atlas.Map.layerNames = layerNames
 
@@ -127,45 +124,7 @@ func (m *Mapfile) Sanitize() (err error) {
 		return
 	}
 
-	if err = m.validateClasses(); err != nil {
-		return
-	}
 	return
-}
-
-func (m *Mapfile) ToWorld() *World {
-	atlasLayers := m.Atlas.Map.layers
-	layerNames := m.Atlas.Map.layerNames
-
-	height := len(atlasLayers[0])
-	width := len(atlasLayers[0][0])
-	world := NewWorld(width, height, layerNames)
-
-	for z := range atlasLayers {
-		layer := world.Layer(z)
-
-		for y := 0; y < height; y++ {
-			for x := 0; x < width; x++ {
-				symbol := atlasLayers[z][y][x]
-				if symbol == m.Defaults.EmptyTile {
-					continue
-				}
-
-				key := m.Atlas.Legend[symbol]
-				data := m.Organisms[key]
-				org := NewOrganism(data.Attrs).
-					AddClasses(data.Classes...).
-					AddAbilities(data.Abilities...)
-
-				exec, ok := layer.Add(org, Vec2D(x, y))
-				if !ok {
-					log.Printf("couldn't add an organism to a layer")
-				}
-				exec()
-			}
-		}
-	}
-	return world
 }
 
 func (m *Mapfile) validateMapLegend(mapLayers []string) error {
@@ -195,48 +154,20 @@ func (m *Mapfile) validateLegendOrganisms() error {
 	return nil
 }
 
-func (m *Mapfile) validateClasses() error {
-	var result error
-	classes := m.Ecology.Classes
-	if classes != nil && len(classes) > 0 {
-		for _, class := range classes {
-			if err := vStringMinLen(string(class), 2, "classes"); err != nil {
-				result = multierror.Append(result, err)
-			}
-		}
-	}
-	return result
-}
-
 func (m *Mapfile) validateOrganismAttrs() error {
 	var result error
-	for _, orgData := range m.Organisms {
-		if err := vStringMinLen(orgData.Attrs.Name, 2, "name"); err != nil {
+	for _, org := range m.Organisms {
+		if err := vStringMinLen(org.Name, 2, "name"); err != nil {
 			result = multierror.Append(result, err)
 		}
-		if err := vIntMinVal(orgData.Attrs.Energy, 1, "energy"); err != nil {
+		if err := vIntMinVal(org.Attrs.Energy, 1, "energy"); err != nil {
 			result = multierror.Append(result, err)
 		}
-		if err := vIntMinVal(orgData.Attrs.Size, 1, "size"); err != nil {
+		if err := vIntMinVal(org.Attrs.Size, 1, "size"); err != nil {
 			result = multierror.Append(result, err)
 		}
-		if err := vIntMinVal(orgData.Attrs.Mass, 1, "mass"); err != nil {
+		if err := vIntMinVal(org.Attrs.Mass, 1, "mass"); err != nil {
 			result = multierror.Append(result, err)
-		}
-		if orgData.Classes != nil && len(orgData.Classes) > 0 {
-			for _, orgClass := range orgData.Classes {
-				ok := false
-				for _, ecoClass := range m.Ecology.Classes {
-					if orgClass == ecoClass {
-						ok = true
-						break
-					}
-				}
-				if !ok {
-					err := errors.Errorf("class \"%s\" not found in ``ecology.classes``", orgClass)
-					result = multierror.Append(result, err)
-				}
-			}
 		}
 	}
 	return result
@@ -267,4 +198,39 @@ func gridify(layers []string) [][][]string {
 		stack[z] = grid
 	}
 	return stack
+}
+
+func (m *Mapfile) ToWorld() *World {
+	atlasLayers := m.Atlas.Map.layers
+	layerNames := m.Atlas.Map.layerNames
+
+	height := len(atlasLayers[0])
+	width := len(atlasLayers[0][0])
+	world := NewWorld(width, height, layerNames)
+
+	for z := range atlasLayers {
+		layer := world.Layer(z)
+
+		for y := 0; y < height; y++ {
+			for x := 0; x < width; x++ {
+				symbol := atlasLayers[z][y][x]
+				if symbol == m.Defaults.EmptyTile {
+					continue
+				}
+
+				key := m.Atlas.Legend[symbol]
+				data := m.Organisms[key]
+				org := NewOrganism(data.Name, data.Symbol, data.Attrs).
+					AddClasses(data.Classes...).
+					AddAbilities(data.Abilities...)
+
+				exec, ok := layer.Add(org, Vec2D(x, y))
+				if !ok {
+					log.Printf("couldn't add an organism to a layer")
+				}
+				exec()
+			}
+		}
+	}
+	return world
 }

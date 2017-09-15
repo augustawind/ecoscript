@@ -27,5 +27,5 @@ func (c *Cell) Display() string {
 }
 
 func (o *Organism) Display() string {
-	return o.Attrs.Symbol
+	return o.Symbol
 }

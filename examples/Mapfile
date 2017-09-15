@@ -40,18 +40,13 @@ atlas:
   legend:
     '$': 'pine_tree'
 
-ecology:
-
-  classes:
-    - 'passive'
-    - 'producer'
-
 organisms:
 
   pine_tree:
+    name: pine tree
+    symbol: '$'
+
     attributes:
-      name: pine tree
-      symbol: '$'
       walkable: false
       energy: 50
       size: 5
