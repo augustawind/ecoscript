@@ -21,7 +21,7 @@ type Space interface {
 	// Walkable returns true if the given Vector is walkable.
 	Walkable(vec Vector) bool
 
-	// View returns all Vectors that are in-bounds within a radius.
+	// View returns all Vectors that are in bounds and within a radius.
 	View(origin Vector, radius int) []Vector
 
 	// ViewR is like View but randomizes the returned Vectors.

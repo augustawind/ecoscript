@@ -136,6 +136,10 @@ func (l *Layer) Cell(vec Vector) *Cell {
 	return l.cells[index]
 }
 
+func (l *Layer) Cells() []*Cell {
+	return l.cells
+}
+
 func (l *Layer) InBounds(vec Vector) bool {
 	return SpaceInBounds(l, vec)
 }
