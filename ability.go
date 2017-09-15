@@ -43,7 +43,7 @@ func NewBehaviorIndex(behaviors ...Behavior) BehaviorIndex {
 
 var Behaviors = NewBehaviorIndex(
 	new(Grow),
-	new(Eat),
-	new(Flow),
+	new(Consume),
+	new(Move),
 	new(Wander),
 )

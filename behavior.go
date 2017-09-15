@@ -42,27 +42,27 @@ func (bhv *Grow) Execute(abl *Ability, wld *World, org *Organism, vec Vector) (d
 }
 
 // ---------------------------------------------------------------------
-// Behavior: Eat
+// Behavior: Consume
 
-// Eat attempts to consume an adjacent organism. If successful, the subject
+// Consume attempts to consume an adjacent organism. If successful, the subject
 // gains energy from the consumed organism.
-type Eat struct{}
+type Consume struct{}
 
-func (bhv *Eat) Name() string {
+func (bhv *Consume) Name() string {
 	return "eat"
 }
 
-func (bhv *Eat) Defaults() Properties {
+func (bhv *Consume) Defaults() Properties {
 	return Properties{
 		"diet":  make([]Trait, 0),
 	}
 }
 
-func (bhv *Eat) Ability(props Properties) *Ability {
+func (bhv *Consume) Ability(props Properties) *Ability {
 	return NewAbility(bhv, props)
 }
 
-func (bhv *Eat) Execute(abl *Ability, wld *World, org *Organism, vec Vector) (delay int, exec func()) {
+func (bhv *Consume) Execute(abl *Ability, wld *World, org *Organism, vec Vector) (delay int, exec func()) {
 	vectors := wld.View(vec, 1)
 
 	for i := range vectors {
@@ -92,7 +92,7 @@ func (bhv *Eat) Execute(abl *Ability, wld *World, org *Organism, vec Vector) (de
 	return
 }
 
-func (bhv *Eat) isEdible(abl *Ability, org *Organism) bool {
+func (bhv *Consume) isEdible(abl *Ability, org *Organism) bool {
 	for i := range org.Traits {
 		trait := org.Traits[i]
 		for _, subjectClass := range bhv.diet(abl) {
@@ -104,24 +104,24 @@ func (bhv *Eat) isEdible(abl *Ability, org *Organism) bool {
 	return false
 }
 
-func (bhv *Eat) diet(abl *Ability) []Trait {
+func (bhv *Consume) diet(abl *Ability) []Trait {
 	return abl.Get("diet").([]Trait)
 }
 
-func (bhv *Eat) consumeBiomass(biomass int) int {
+func (bhv *Consume) consumeBiomass(biomass int) int {
 	return -biomass
 }
 
 // ---------------------------------------------------------------------
-// Behavior: Flow
+// Behavior: Move
 
-type Flow struct{}
+type Move struct{}
 
-func (bhv *Flow) Name() string {
+func (bhv *Move) Name() string {
 	return "flow"
 }
 
-func (bhv *Flow) Defaults() Properties {
+func (bhv *Move) Defaults() Properties {
 	speed := 1
 	return Properties{
 		"delta":  randomDelta(speed),
@@ -130,11 +130,11 @@ func (bhv *Flow) Defaults() Properties {
 	}
 }
 
-func (bhv *Flow) Ability(props Properties) *Ability {
+func (bhv *Move) Ability(props Properties) *Ability {
 	return NewAbility(bhv, props)
 }
 
-func (bhv *Flow) Execute(abl *Ability, wld *World, org *Organism, vec Vector) (delay int, exec func()) {
+func (bhv *Move) Execute(abl *Ability, wld *World, org *Organism, vec Vector) (delay int, exec func()) {
 	dest := vec.Plus(abl.Get("delta").(Vector))
 
 	if !wld.Walkable(dest) {
@@ -153,7 +153,7 @@ func (bhv *Flow) Execute(abl *Ability, wld *World, org *Organism, vec Vector) (d
 	return
 }
 
-func (bhv *Flow) randomizeDelta(abl *Ability) {
+func (bhv *Move) randomizeDelta(abl *Ability) {
 	abl.Set("delta", randomDelta(abl.Get("speed").(int)))
 }
 
@@ -174,10 +174,10 @@ var directions = []Vector{
 }
 
 // ---------------------------------------------------------------------
-// Behavior: Wander(Flow)
+// Behavior: Wander(Move)
 
 type Wander struct {
-	*Flow
+	*Move
 }
 
 func (bhv *Wander) Name() string {
@@ -190,5 +190,5 @@ func (bhv *Wander) Ability(props Properties) *Ability {
 
 func (bhv *Wander) Execute(abl *Ability, wld *World, org *Organism, vec Vector) (delay int, exec func()) {
 	bhv.randomizeDelta(abl)
-	return bhv.Flow.Execute(abl, wld, org, vec)
+	return bhv.Move.Execute(abl, wld, org, vec)
 }
