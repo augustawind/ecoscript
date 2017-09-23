@@ -46,65 +46,65 @@ func NewEntity(name, symbol string, attrs *Attributes) *Entity {
 	}
 }
 
-func (o *Entity) AddAbilities(abilities ...*Ability) *Entity {
+func (e *Entity) AddAbilities(abilities ...*Ability) *Entity {
 	for i := range abilities {
 		ability := abilities[i]
-		o.Abilities = append(o.Abilities, ability)
+		e.Abilities = append(e.Abilities, ability)
 	}
-	return o
+	return e
 }
 
-func (o *Entity) AddClasses(traits ...Trait) *Entity {
-	o.Traits = append(o.Traits, traits...)
-	return o
+func (e *Entity) AddClasses(traits ...Trait) *Entity {
+	e.Traits = append(e.Traits, traits...)
+	return e
 }
 
-func (o *Entity) Tick(world *World, vec Vector) {
+func (e *Entity) Tick(world *World, vec Vector) {
 	// If activity in progress, continue it. Otherwise, start a new activity.
-	if o.activity.InProgress() {
-		o.activity.Continue()
+	if e.activity.InProgress() {
+		e.activity.Continue()
 	} else {
 		// Start new activity.
-		ability := o.nextAbility()
-		delay, exec := ability.Execute(world, o, vec)
-		o.activity.Begin(delay, exec)
+		ability := e.nextAbility()
+		delay, exec := ability.Execute(world, e, vec)
+		e.activity.Begin(delay, exec)
 	}
 }
 
-func (o *Entity) nextAbility() *Ability {
-	n := len(o.Abilities) - 1
+func (e *Entity) nextAbility() *Ability {
+	n := len(e.Abilities) - 1
 	if n == 0 {
 		n = 1
 	}
-	ability := o.Abilities[o.currentAbility%n]
-	o.currentAbility++
+	ability := e.Abilities[e.currentAbility%n]
+	e.currentAbility++
 	return ability
 }
 
 // ---------------------------------------------------------------------
 // Behavior API.
 
-func (o *Entity) ID() EntityID {
-	return o.id
+func (e *Entity) ID() EntityID {
+	return e.id
 }
 
-func (o *Entity) Transfer(energy int) bool {
-	o.Attrs.Energy += energy
-	return o.Alive()
+func (e *Entity) Transfer(energy int) bool {
+	e.Attrs.Energy += energy
+	return e.Alive()
 }
 
-func (o *Entity) Biomass() int {
-	return o.Attrs.Size * o.Attrs.Mass
+func (e *Entity) Biomass() int {
+	return e.Attrs.Size * e.Attrs.Mass
 }
 
-func (o *Entity) Alive() bool {
-	return o.Attrs.Energy > 0
+func (e *Entity) Alive() bool {
+	return e.Attrs.Energy > 0
 }
 
-func (o *Entity) Walkable() bool {
-	return o.Attrs.Walkable
+func (e *Entity) Walkable() bool {
+	return e.Attrs.Walkable
 }
 
-func (o *Entity) EndLife() {
-	o.Attrs.Energy = 0
+func (e *Entity) EndLife() {
+	e.Attrs.Energy = 0
 }

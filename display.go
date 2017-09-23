@@ -26,6 +26,6 @@ func (c *Cell) Display() string {
 	return blankSymbol
 }
 
-func (o *Entity) Display() string {
-	return o.Symbol
+func (e *Entity) Display() string {
+	return e.Symbol
 }
