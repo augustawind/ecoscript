@@ -44,14 +44,14 @@ all:
     fi;
     robo check "$@"
     robo build
-
-run:
-  summary: run the app
-  command: go run *.go
   usage: "[SET-OPTIONS]"
   examples:
     - description: don't build if check fails (set -e)
       command: robo all -e
+
+run:
+  summary: run the app
+  command: robo build && ./ecoscript
 
 install-hooks:
   summary: symlink bundled git hooks to .git/hooks/
