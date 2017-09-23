@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	baseActionCost int = -5
+	baseActionCost int = 5
 )
 
 type OrganismID int
@@ -72,7 +72,7 @@ func (o *Organism) Tick(world *World, vec Vector) {
 		o.activity.Continue()
 	} else {
 		// Apply universal action energy cost.
-		if alive := o.Transfer(baseActionCost); !alive {
+		if alive := o.Transfer(-baseActionCost); !alive {
 			// If energy depleted, kill and remove organism.
 			execKill, ok := world.Kill(o, vec)
 			if !ok {
