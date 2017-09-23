@@ -30,4 +30,3 @@ func show(s ...interface{}) {
 func showf(format string, a ...interface{}) {
 	spew.Dump(fmt.Sprintf(format, a...))
 }
-

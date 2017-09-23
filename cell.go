@@ -73,6 +73,7 @@ func (c *Cell) Add(org *Organism) (exec action, ok bool) {
 		if !ok {
 			return
 		}
+		c.occupier = org
 	}
 
 	exec = chain(exec, func() {
