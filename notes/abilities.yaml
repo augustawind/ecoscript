@@ -1,0 +1,128 @@
+---
+
+common:
+
+  summary: properties shared by all abilities
+  properties:
+      delay:
+        summary: time it takes to act
+        type: int
+        minValue: 1
+        maxValue: 3
+        conversions:
+          ticks: delay
+
+
+abilities:
+
+  - name: grow
+    summary: gain energy over time
+    properties:
+
+      rate:
+        summary: the rate at which energy is gained
+        # TODO: figure this math out.
+        notes: Somehow this should decrease as Entity's energy level increases.
+        type: int
+        minValue: 1
+        maxValue: 10
+
+    conversions:
+      energy: rate * 2
+
+
+  - name: consume
+    summary: Consume a walkable Entity on the same tile, gaining energy from it.
+    properties:
+
+      traits:
+        summary: what the Entity can consume
+        type: list
+        minItems: 1
+        items:
+          summary: trait name
+          type: string
+
+
+  - name: move
+    summary: move around
+    properties:
+
+      changeRate:
+        summary: probability of randomly changing movement dir
+        notes: will attempt to change dir when obstacle in path, regardless
+        type: float
+        minValue: 0.0
+        maxValue: 1.0
+
+      moveRate:
+        summary: probability of moving vs waiting
+        type: float
+        minValue: 0.0
+        maxValue: 1.0
+
+      dir:
+        summary: direction of movement
+        type: object
+        properties:
+
+          x:
+            summary: x direction
+            type: int
+            minValue: -1
+            maxValue: 1
+          y:
+            summary: y direction
+            type: int
+            minValue: -1
+            maxValue: 1
+
+
+  - name: sense
+    summary: identify specific Entities
+    properties:
+
+      sensitivity:
+        summary: threshold of detection
+        type: int
+        minValue: 1
+
+      traits:
+        summary: traits that can be detected
+        type: list
+        minItems: 1
+        items:
+          summary: trait name
+          type: string
+
+      targets:
+        summary: entities currently detected
+        type: list
+        items:
+          summary: entity ID and position
+          type: object
+          properties:
+
+            id:
+              summary: entity ID
+              type: int
+
+            vector:
+              summary: entity coordinates
+              type: object
+              properties:
+
+                x:
+                  summary: x coordinate
+                  type: int
+                y:
+                  summary: y coordinate
+                  type: int
+
+
+  - name: seek
+    summary: search and move toward specific Entities
+    inherits:
+      - move
+    properties:
+      sensitivity:
