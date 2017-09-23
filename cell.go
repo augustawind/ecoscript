@@ -22,6 +22,10 @@ func newCell() *Cell {
 	return cell
 }
 
+func (c *Cell) Population() int {
+	return len(c.stack.organisms)
+}
+
 func (c *Cell) Occupied() bool {
 	return c.occupier != nil
 }
