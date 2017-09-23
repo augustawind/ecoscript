@@ -105,7 +105,7 @@ func SpaceMove(s Space, organism *Organism, src Vector, dst Vector) (exec action
 
 	ok = okAdd && okRm
 	if ok {
-		exec = execAdd.Append(execRm)
+		exec = chain(execAdd, execRm)
 	}
 	return
 }
@@ -114,16 +114,19 @@ func SpaceKill(s Space, organism *Organism, vec Vector) (exec action, ok bool) {
 	// TODO: implement corpses
 	exec, ok = s.Remove(organism, vec)
 	if ok {
-		exec = exec.Append(organism.EndLife)
+		exec = chain(exec, organism.EndLife)
 	}
 	return
 }
 
 type action func()
 
-func (a action) Append(b action) action {
+func chain(actions ...action) action {
 	return func() {
-		a()
-		b()
+		for _, action := range actions {
+			if action != nil {
+				action()
+			}
+		}
 	}
 }
