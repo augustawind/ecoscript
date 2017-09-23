@@ -6,17 +6,17 @@ import (
 
 type Cell struct {
 	occupier *Entity
-	stack    *orgStack
+	stack    *entStack
 }
 
-type orgStack struct {
+type entStack struct {
 	entities []*Entity
 	indexes  map[EntityID]int
 }
 
 func newCell() *Cell {
 	cell := new(Cell)
-	cell.stack = new(orgStack)
+	cell.stack = new(entStack)
 	cell.stack.entities = make([]*Entity, 0)
 	cell.stack.indexes = make(map[EntityID]int)
 	return cell
@@ -39,10 +39,10 @@ func (c *Cell) Entities() []*Entity {
 }
 
 func (c *Cell) Shuffled() []*Entity {
-	orgs := c.Entities()
-	shuffled := make([]*Entity, len(orgs))
-	for i, j := range rand.Perm(len(orgs)) {
-		shuffled[i] = orgs[j]
+	ents := c.Entities()
+	shuffled := make([]*Entity, len(ents))
+	for i, j := range rand.Perm(len(ents)) {
+		shuffled[i] = ents[j]
 	}
 	return shuffled
 }
@@ -149,7 +149,7 @@ func (c *Cell) setAt(i int, ent *Entity) (exec action, ok bool) {
 
 }
 
-func (c *Cell) removeOrg(id EntityID) (exec action, ok bool) {
+func (c *Cell) removeEnt(id EntityID) (exec action, ok bool) {
 	index, ok := c.stack.indexes[id]
 	if !ok {
 		return

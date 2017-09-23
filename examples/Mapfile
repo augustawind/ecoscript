@@ -39,11 +39,11 @@ atlas:
 
   legend:
     - symbol: 'A'
-      organism: 'pine-tree'
+      entity: 'pine-tree'
     - symbol: '&'
-      organism: 'sheep'
+      entity: 'sheep'
 
-organisms:
+entities:
 
   pine-tree:
     name: pine tree

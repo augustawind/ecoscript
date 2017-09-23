@@ -72,9 +72,9 @@ func (bhv *Consume) Execute(abl *Ability, wld *World, ent *Entity, vec Vector) (
 		}
 		cell := wld.Cell(vec)
 
-		orgs := cell.Shuffled()
-		for j := range orgs {
-			entity := orgs[j]
+		ents := cell.Shuffled()
+		for j := range ents {
+			entity := ents[j]
 			if bhv.isEdible(abl, ent) {
 				execDestroy, ok := wld.Destroy(entity, vec)
 				if ok {

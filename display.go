@@ -18,9 +18,9 @@ func (l *Layer) Display() string {
 }
 
 func (c *Cell) Display() string {
-	orgs := c.Entities()
-	if len(orgs) > 0 {
-		ent := orgs[len(orgs)-1]
+	ents := c.Entities()
+	if len(ents) > 0 {
+		ent := ents[len(ents)-1]
 		return ent.Display()
 	}
 	return blankSymbol
