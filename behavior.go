@@ -54,7 +54,7 @@ func (bhv *Consume) Name() string {
 
 func (bhv *Consume) Defaults() Properties {
 	return Properties{
-		"diet":  make([]Trait, 0),
+		"diet": make([]Trait, 0),
 	}
 }
 

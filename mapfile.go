@@ -148,7 +148,7 @@ func (m *Mapfile) validateLegendOrganisms() error {
 	for _, key := range m.Atlas.Legend {
 		_, ok := m.Organisms[key]
 		if !ok {
-			return errors.Errorf("'%s' is referenced in ``atlas.legend``, but no entry is found in ``organisms``")
+			return errors.Errorf("'%s' is referenced in ``atlas.legend``, but no entry is found in ``organisms``", key)
 		}
 	}
 	return nil
