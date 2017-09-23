@@ -17,10 +17,19 @@ test:
 check:
   summary: run vet, fmt, lint, test
   command: |
+    if [ $# != 0 ]; then
+      set "$@"
+    fi;
     robo vet
     robo fmt
     robo lint
     robo test
+  usage: "[SET-OPTIONS]"
+  examples:
+    - description: exit on failure (set -e)
+      command: robo check -e
+    - description: print each command and exit on failure (set -x -e)
+      command: robo check -x -e
 
 build:
   summary: compile the app
@@ -29,9 +38,16 @@ build:
 all:
   summary: run all checks, then build
   command: |
-    robo check
+    if [ $# != 0 ]; then
+      set "$@"
+    fi;
+    robo check "$@"
     robo build
 
 run:
   summary: run the app
   command: go run *.go
+  usage: "[SET-OPTIONS]"
+  examples:
+    - description: don't build if check fails (set -e)
+      command: robo all -e
