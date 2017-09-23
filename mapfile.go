@@ -29,7 +29,7 @@ type Mapfile struct {
 		Legend    map[string]string
 	} `mapstructure:"atlas"`
 
-	Organisms map[string]*Organism `mapstructure:"organisms"`
+	Entities map[string]*Entity `mapstructure:"entities"`
 }
 
 type layerEntry struct {
@@ -38,8 +38,8 @@ type layerEntry struct {
 }
 
 type legendEntry struct {
-	Symbol      string `mapstructure:"symbol"`
-	OrganismKey string `mapstructure:"organism"`
+	Symbol    string `mapstructure:"symbol"`
+	EntityKey string `mapstructure:"entity"`
 }
 
 // ParseMapfile reads and parses a Mapfile at the given file path.
@@ -83,8 +83,8 @@ func ParseMapfile(filePath string) (mapfile *Mapfile, err error) {
 // - Assert exactly one map source is provided (inline or file).
 // - Assert all symbols used in map are defined in legend
 // - Assert no symbol occurs more than once in legend.
-// - Assert all organisms used in legend are defined in organisms.
-// - Validate organism attributes.
+// - Assert all entities used in legend are defined in entities.
+// - Validate entity attributes.
 //
 // Prepare
 // -------
@@ -153,7 +153,7 @@ func (m *Mapfile) clean() (err error) {
 			)
 			return errors.WithMessage(err, "symbol must be unique")
 		}
-		m.Atlas.Legend[entry.Symbol] = entry.OrganismKey
+		m.Atlas.Legend[entry.Symbol] = entry.EntityKey
 	}
 
 	// Validate map/legend relationship
@@ -161,11 +161,11 @@ func (m *Mapfile) clean() (err error) {
 		return
 	}
 
-	// Validate legend/organism relationship
-	if len(m.Organisms) == 0 {
-		return errors.New("``organisms`` must have at least one entry")
+	// Validate legend/entity relationship
+	if len(m.Entities) == 0 {
+		return errors.New("``entities`` must have at least one entry")
 	}
-	if err = m.cleanLegendOrganisms(); err != nil {
+	if err = m.cleanLegendEntities(); err != nil {
 		return
 	}
 
@@ -189,29 +189,29 @@ func (m *Mapfile) cleanMapLegend() error {
 	return nil
 }
 
-func (m *Mapfile) cleanLegendOrganisms() error {
+func (m *Mapfile) cleanLegendEntities() error {
 	for _, key := range m.Atlas.Legend {
-		_, ok := m.Organisms[key]
+		_, ok := m.Entities[key]
 		if !ok {
-			return errors.Errorf("'%s' is referenced in ``atlas.legend``, but no entry is found in ``organisms``", key)
+			return errors.Errorf("'%s' is referenced in ``atlas.legend``, but no entry is found in ``entities``", key)
 		}
 	}
 	return nil
 }
 
-func (m *Mapfile) cleanOrganismAttrs() error {
+func (m *Mapfile) cleanEntityAttrs() error {
 	var result error
-	for _, org := range m.Organisms {
-		if err := vStringMinLen(org.Name, 2, "name"); err != nil {
+	for _, ent := range m.Entities {
+		if err := vStringMinLen(ent.Name, 2, "name"); err != nil {
 			result = multierror.Append(result, err)
 		}
-		if err := vIntMinVal(org.Attrs.Energy, 1, "energy"); err != nil {
+		if err := vIntMinVal(ent.Attrs.Energy, 1, "energy"); err != nil {
 			result = multierror.Append(result, err)
 		}
-		if err := vIntMinVal(org.Attrs.Size, 1, "size"); err != nil {
+		if err := vIntMinVal(ent.Attrs.Size, 1, "size"); err != nil {
 			result = multierror.Append(result, err)
 		}
-		if err := vIntMinVal(org.Attrs.Mass, 1, "mass"); err != nil {
+		if err := vIntMinVal(ent.Attrs.Mass, 1, "mass"); err != nil {
 			result = multierror.Append(result, err)
 		}
 	}
@@ -220,14 +220,14 @@ func (m *Mapfile) cleanOrganismAttrs() error {
 
 func vStringMinLen(val string, min int, key string) (err error) {
 	if len(val) < min {
-		err = errors.Errorf("organism attribute \"%s\" must have %d or more characters", key, min)
+		err = errors.Errorf("entity attribute \"%s\" must have %d or more characters", key, min)
 	}
 	return
 }
 
 func vIntMinVal(val int, min int, key string) (err error) {
 	if val < min {
-		err = errors.Errorf("organism attribute \"%s\" must be %d or greater", key, min)
+		err = errors.Errorf("entity attribute \"%s\" must be %d or greater", key, min)
 	}
 	return
 }
@@ -256,9 +256,9 @@ func gridify(layers []string) [][][]string {
 //   - If symbol is the empty tile symbol:
 //     - Leave the tile blank.
 //   - Otherwise:
-//     - Look up Organism data in the legend.
-//     - Create a new Organism with that data.
-//     - Add the Organism to the layer.
+//     - Look up Entity data in the legend.
+//     - Create a new Entity with that data.
+//     - Add the Entity to the layer.
 // - Return the World.
 func (m *Mapfile) ToWorld() *World {
 	atlasLayers := m.Atlas.Map.layers
@@ -279,9 +279,9 @@ func (m *Mapfile) ToWorld() *World {
 					continue
 				}
 
-				// Create new Organism.
+				// Create new Entity.
 				key := m.Atlas.Legend[symbol]
-				data := m.Organisms[key]
+				data := m.Entities[key]
 
 				abilities := make([]*Ability, len(data.Abilities))
 				for i := range data.Abilities {
@@ -294,14 +294,14 @@ func (m *Mapfile) ToWorld() *World {
 					abilities[i] = behavior.Ability(properties)
 				}
 
-				org := NewOrganism(data.Name, data.Symbol, data.Attrs).
+				ent := NewEntity(data.Name, data.Symbol, data.Attrs).
 					AddClasses(data.Traits...).
 					AddAbilities(abilities...)
 
-				// Add Organism to Layer.
-				exec, ok := layer.Add(org, Vec2D(x, y))
+				// Add Entity to Layer.
+				exec, ok := layer.Add(ent, Vec2D(x, y))
 				if !ok {
-					log.Printf("couldn't add an organism to a layer")
+					log.Printf("couldn't add an entity to a layer")
 				}
 				exec()
 			}

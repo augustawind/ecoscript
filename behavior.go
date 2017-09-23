@@ -8,7 +8,7 @@ type Behavior interface {
 	Name() string
 	Defaults() Properties
 	Ability(Properties) *Ability
-	Execute(*Ability, *World, *Organism, Vector) (delay int, exec func())
+	Execute(*Ability, *World, *Entity, Vector) (delay int, exec func())
 }
 
 type Properties map[string]interface{}
@@ -33,10 +33,10 @@ func (bhv *Grow) Ability(props Properties) *Ability {
 	return NewAbility(bhv, props)
 }
 
-func (bhv *Grow) Execute(abl *Ability, wld *World, org *Organism, vec Vector) (delay int, exec func()) {
+func (bhv *Grow) Execute(abl *Ability, wld *World, ent *Entity, vec Vector) (delay int, exec func()) {
 	delay = 10
 	exec = func() {
-		org.Transfer(abl.Get("rate").(int))
+		ent.Transfer(abl.Get("rate").(int))
 	}
 	return
 }
@@ -44,8 +44,8 @@ func (bhv *Grow) Execute(abl *Ability, wld *World, org *Organism, vec Vector) (d
 // ---------------------------------------------------------------------
 // Behavior: Consume
 
-// Consume attempts to consume an adjacent organism. If successful, the subject
-// gains energy from the consumed organism.
+// Consume attempts to consume an adjacent entity. If successful, the subject
+// gains energy from the consumed entity.
 type Consume struct{}
 
 func (bhv *Consume) Name() string {
@@ -62,7 +62,7 @@ func (bhv *Consume) Ability(props Properties) *Ability {
 	return NewAbility(bhv, props)
 }
 
-func (bhv *Consume) Execute(abl *Ability, wld *World, org *Organism, vec Vector) (delay int, exec func()) {
+func (bhv *Consume) Execute(abl *Ability, wld *World, ent *Entity, vec Vector) (delay int, exec func()) {
 	vectors := wld.View(vec, 1)
 
 	for i := range vectors {
@@ -74,15 +74,15 @@ func (bhv *Consume) Execute(abl *Ability, wld *World, org *Organism, vec Vector)
 
 		orgs := cell.Shuffled()
 		for j := range orgs {
-			organism := orgs[j]
-			if bhv.isEdible(abl, org) {
-				execDestroy, ok := wld.Destroy(organism, vec)
+			entity := orgs[j]
+			if bhv.isEdible(abl, ent) {
+				execDestroy, ok := wld.Destroy(entity, vec)
 				if ok {
-					energy := bhv.biomassToEnergy(organism.Biomass())
+					energy := bhv.biomassToEnergy(entity.Biomass())
 					delay = 15
 					exec = func() {
 						execDestroy()
-						organism.Transfer(energy)
+						entity.Transfer(energy)
 					}
 				}
 				return
@@ -92,9 +92,9 @@ func (bhv *Consume) Execute(abl *Ability, wld *World, org *Organism, vec Vector)
 	return
 }
 
-func (bhv *Consume) isEdible(abl *Ability, org *Organism) bool {
-	for i := range org.Traits {
-		trait := org.Traits[i]
+func (bhv *Consume) isEdible(abl *Ability, ent *Entity) bool {
+	for i := range ent.Traits {
+		trait := ent.Traits[i]
 		for _, subjectClass := range bhv.diet(abl) {
 			if trait == subjectClass {
 				return true
@@ -134,7 +134,7 @@ func (bhv *Move) Ability(props Properties) *Ability {
 	return NewAbility(bhv, props)
 }
 
-func (bhv *Move) Execute(abl *Ability, wld *World, org *Organism, vec Vector) (delay int, exec func()) {
+func (bhv *Move) Execute(abl *Ability, wld *World, ent *Entity, vec Vector) (delay int, exec func()) {
 	dest := vec.Plus(abl.Get("delta").(Vector))
 
 	if !wld.Walkable(dest) {
@@ -147,8 +147,8 @@ func (bhv *Move) Execute(abl *Ability, wld *World, org *Organism, vec Vector) (d
 	delay = 10
 	exec = func() {
 		abl.Set("delta", dest.Minus(vec))
-		wld.Move(org, vec, dest)
-		org.Transfer(abl.Get("effort").(int))
+		wld.Move(ent, vec, dest)
+		ent.Transfer(abl.Get("effort").(int))
 	}
 	return
 }
@@ -188,7 +188,7 @@ func (bhv *Wander) Ability(props Properties) *Ability {
 	return NewAbility(bhv, props)
 }
 
-func (bhv *Wander) Execute(abl *Ability, wld *World, org *Organism, vec Vector) (delay int, exec func()) {
+func (bhv *Wander) Execute(abl *Ability, wld *World, ent *Entity, vec Vector) (delay int, exec func()) {
 	bhv.randomizeDelta(abl)
-	return bhv.Move.Execute(abl, wld, org, vec)
+	return bhv.Move.Execute(abl, wld, ent, vec)
 }

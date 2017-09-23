@@ -36,21 +36,21 @@ type Space interface {
 	// RandWalkable finds a random walkable Vector within a radius.
 	RandWalkable(origin Vector, radius int) Vector
 
-	// Add attempts to add an Organism at the given Vector.
+	// Add attempts to add an Entity at the given Vector.
 	// It returns true if it succeeded or false if it wasn't found.
-	Add(org *Organism, vec Vector) (action, bool)
+	Add(ent *Entity, vec Vector) (action, bool)
 
-	// Remove attempts to remove an Organism at the given Vector.
+	// Remove attempts to remove an Entity at the given Vector.
 	// It returns true if it succeeded or false if it wasn't found.
-	Remove(org *Organism, vec Vector) (action, bool)
+	Remove(ent *Entity, vec Vector) (action, bool)
 
-	// Destroy attempts to remove and destroy an Organism at the given Vector.
+	// Destroy attempts to remove and destroy an Entity at the given Vector.
 	// It returns true if it succeeded or false if it wasn't found.
-	Destroy(org *Organism, vec Vector) (action, bool)
+	Destroy(ent *Entity, vec Vector) (action, bool)
 
-	// Move attempts to move an Organism from one Vector to another
+	// Move attempts to move an Entity from one Vector to another
 	// It returns true if it succeeded or false if it wasn't found.
-	Move(org *Organism, src Vector, dst Vector) (action, bool)
+	Move(ent *Entity, src Vector, dst Vector) (action, bool)
 }
 
 func SpaceInBounds(s Space, vec Vector) bool {
@@ -87,21 +87,21 @@ func SpaceRandWalkable(s Space, origin Vector, radius int) Vector {
 	return vectors[index]
 }
 
-func SpaceAdd(s Space, organism *Organism, vec Vector) (exec action, ok bool) {
+func SpaceAdd(s Space, entity *Entity, vec Vector) (exec action, ok bool) {
 	cell := s.Cell(vec)
-	return cell.Add(organism)
+	return cell.Add(entity)
 }
 
-func SpaceRemove(s Space, organism *Organism, vec Vector) (exec action, ok bool) {
+func SpaceRemove(s Space, entity *Entity, vec Vector) (exec action, ok bool) {
 	cell := s.Cell(vec)
-	return cell.Remove(organism)
+	return cell.Remove(entity)
 }
 
-func SpaceMove(s Space, organism *Organism, src Vector, dst Vector) (exec action, ok bool) {
+func SpaceMove(s Space, entity *Entity, src Vector, dst Vector) (exec action, ok bool) {
 	oldCell := s.Cell(src)
 	newCell := s.Cell(dst)
-	execAdd, okAdd := newCell.Add(organism)
-	execRm, okRm := oldCell.Remove(organism)
+	execAdd, okAdd := newCell.Add(entity)
+	execRm, okRm := oldCell.Remove(entity)
 
 	ok = okAdd && okRm
 	if ok {
@@ -110,11 +110,11 @@ func SpaceMove(s Space, organism *Organism, src Vector, dst Vector) (exec action
 	return
 }
 
-func SpaceDestroy(s Space, organism *Organism, vec Vector) (exec action, ok bool) {
+func SpaceDestroy(s Space, entity *Entity, vec Vector) (exec action, ok bool) {
 	// TODO: implement corpses
-	exec, ok = s.Remove(organism, vec)
+	exec, ok = s.Remove(entity, vec)
 	if ok {
-		exec = chain(exec, organism.EndLife)
+		exec = chain(exec, entity.EndLife)
 	}
 	return
 }

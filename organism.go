@@ -1,15 +1,15 @@
 package main
 
-type OrganismID int
+type EntityID int
 
 var (
-	oid            OrganismID  = -1
-	lastOrganismID *OrganismID = &oid
+	oid          EntityID  = -1
+	lastEntityID *EntityID = &oid
 )
 
-// Organism represents an entity in the world.
-type Organism struct {
-	id OrganismID
+// Entity represents an entity in the world.
+type Entity struct {
+	id EntityID
 
 	Name      string      `mapstructure:"name"`
 	Symbol    string      `mapstructure:"symbol"`
@@ -30,13 +30,13 @@ type Attributes struct {
 
 type Trait string
 
-func NewOrganism(name, symbol string, attrs *Attributes) *Organism {
+func NewEntity(name, symbol string, attrs *Attributes) *Entity {
 	abilities := make([]*Ability, 0)
 	traits := make([]Trait, 0)
 	activity := NewActivity()
-	*lastOrganismID++
-	return &Organism{
-		id:        *lastOrganismID,
+	*lastEntityID++
+	return &Entity{
+		id:        *lastEntityID,
 		Name:      name,
 		Symbol:    symbol,
 		Attrs:     attrs,
@@ -46,7 +46,7 @@ func NewOrganism(name, symbol string, attrs *Attributes) *Organism {
 	}
 }
 
-func (o *Organism) AddAbilities(abilities ...*Ability) *Organism {
+func (o *Entity) AddAbilities(abilities ...*Ability) *Entity {
 	for i := range abilities {
 		ability := abilities[i]
 		o.Abilities = append(o.Abilities, ability)
@@ -54,12 +54,12 @@ func (o *Organism) AddAbilities(abilities ...*Ability) *Organism {
 	return o
 }
 
-func (o *Organism) AddClasses(traits ...Trait) *Organism {
+func (o *Entity) AddClasses(traits ...Trait) *Entity {
 	o.Traits = append(o.Traits, traits...)
 	return o
 }
 
-func (o *Organism) Tick(world *World, vec Vector) {
+func (o *Entity) Tick(world *World, vec Vector) {
 	// If activity in progress, continue it. Otherwise, start a new activity.
 	if o.activity.InProgress() {
 		o.activity.Continue()
@@ -71,7 +71,7 @@ func (o *Organism) Tick(world *World, vec Vector) {
 	}
 }
 
-func (o *Organism) nextAbility() *Ability {
+func (o *Entity) nextAbility() *Ability {
 	n := len(o.Abilities) - 1
 	if n == 0 {
 		n = 1
@@ -84,27 +84,27 @@ func (o *Organism) nextAbility() *Ability {
 // ---------------------------------------------------------------------
 // Behavior API.
 
-func (o *Organism) ID() OrganismID {
+func (o *Entity) ID() EntityID {
 	return o.id
 }
 
-func (o *Organism) Transfer(energy int) bool {
+func (o *Entity) Transfer(energy int) bool {
 	o.Attrs.Energy += energy
 	return o.Alive()
 }
 
-func (o *Organism) Biomass() int {
+func (o *Entity) Biomass() int {
 	return o.Attrs.Size * o.Attrs.Mass
 }
 
-func (o *Organism) Alive() bool {
+func (o *Entity) Alive() bool {
 	return o.Attrs.Energy > 0
 }
 
-func (o *Organism) Walkable() bool {
+func (o *Entity) Walkable() bool {
 	return o.Attrs.Walkable
 }
 
-func (o *Organism) EndLife() {
+func (o *Entity) EndLife() {
 	o.Attrs.Energy = 0
 }

@@ -18,14 +18,14 @@ func (l *Layer) Display() string {
 }
 
 func (c *Cell) Display() string {
-	orgs := c.Organisms()
+	orgs := c.Entities()
 	if len(orgs) > 0 {
-		org := orgs[len(orgs)-1]
-		return org.Display()
+		ent := orgs[len(orgs)-1]
+		return ent.Display()
 	}
 	return blankSymbol
 }
 
-func (o *Organism) Display() string {
+func (o *Entity) Display() string {
 	return o.Symbol
 }

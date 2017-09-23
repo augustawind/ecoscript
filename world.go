@@ -40,17 +40,17 @@ func (w *World) Tick() {
 			for _, x := range rand.Perm(layer.Width()) {
 				vec := Vec(x, y, z)
 				cell := layer.Cell(vec)
-				organisms := cell.Shuffled()
+				entities := cell.Shuffled()
 
-				for i := range organisms {
-					// Check index each iteration to account for organisms that were removed.
+				for i := range entities {
+					// Check index each iteration to account for entities that were removed.
 					if i <= cell.Population()-1 {
 						break
 					}
-					// Tick organism.
-					org := organisms[i]
+					// Tick entity.
+					ent := entities[i]
 					// TODO: MAYBE (?) suspend actions until end to resolve conflicts (?)
-					org.Tick(w, vec)
+					ent.Tick(w, vec)
 				}
 			}
 		}
@@ -61,11 +61,11 @@ func (w *World) Tick() {
 		//	for x := 0; x < layer.Width(); x++ {
 		//		vec := To2D(x, y)
 		//		cell := layer.Cell(vec)
-		//		organisms := cell.Organisms()
+		//		entities := cell.Entities()
 		//
-		//		for i := range organisms {
-		//			org := organisms[i]
-		//			org.Tick(w, vec)
+		//		for i := range entities {
+		//			ent := entities[i]
+		//			ent.Tick(w, vec)
 		//		}
 		//	}
 		//}
@@ -147,20 +147,20 @@ func (w *World) RandWalkable(origin Vector, radius int) Vector {
 	return SpaceRandWalkable(w, origin, radius)
 }
 
-func (w *World) Add(organism *Organism, vec Vector) (exec action, ok bool) {
-	return SpaceAdd(w, organism, vec)
+func (w *World) Add(entity *Entity, vec Vector) (exec action, ok bool) {
+	return SpaceAdd(w, entity, vec)
 }
 
-func (w *World) Remove(organism *Organism, vec Vector) (exec action, ok bool) {
-	return SpaceRemove(w, organism, vec)
+func (w *World) Remove(entity *Entity, vec Vector) (exec action, ok bool) {
+	return SpaceRemove(w, entity, vec)
 }
 
-func (w *World) Move(organism *Organism, src Vector, dst Vector) (exec action, ok bool) {
-	return SpaceMove(w, organism, src, dst)
+func (w *World) Move(entity *Entity, src Vector, dst Vector) (exec action, ok bool) {
+	return SpaceMove(w, entity, src, dst)
 }
 
-func (w *World) Destroy(organism *Organism, vec Vector) (exec action, ok bool) {
-	return SpaceDestroy(w, organism, vec)
+func (w *World) Destroy(entity *Entity, vec Vector) (exec action, ok bool) {
+	return SpaceDestroy(w, entity, vec)
 }
 
 // ---------------------------------------------------------------------
@@ -219,18 +219,18 @@ func (l *Layer) RandWalkable(origin Vector, radius int) Vector {
 	return SpaceRandWalkable(l, origin, radius)
 }
 
-func (l *Layer) Add(organism *Organism, vec Vector) (exec action, ok bool) {
-	return SpaceAdd(l, organism, vec)
+func (l *Layer) Add(entity *Entity, vec Vector) (exec action, ok bool) {
+	return SpaceAdd(l, entity, vec)
 }
 
-func (l *Layer) Remove(organism *Organism, vec Vector) (exec action, ok bool) {
-	return SpaceRemove(l, organism, vec)
+func (l *Layer) Remove(entity *Entity, vec Vector) (exec action, ok bool) {
+	return SpaceRemove(l, entity, vec)
 }
 
-func (l *Layer) Move(organism *Organism, src Vector, dst Vector) (exec action, ok bool) {
-	return SpaceMove(l, organism, src, dst)
+func (l *Layer) Move(entity *Entity, src Vector, dst Vector) (exec action, ok bool) {
+	return SpaceMove(l, entity, src, dst)
 }
 
-func (l *Layer) Destroy(organism *Organism, vec Vector) (exec action, ok bool) {
-	return SpaceDestroy(l, organism, vec)
+func (l *Layer) Destroy(entity *Entity, vec Vector) (exec action, ok bool) {
+	return SpaceDestroy(l, entity, vec)
 }

@@ -25,9 +25,9 @@ func (abl *Ability) Set(key string, value interface{}) {
 	abl.Properties[key] = value
 }
 
-func (abl *Ability) Execute(wld *World, org *Organism, vec Vector) (delay int, exec func()) {
+func (abl *Ability) Execute(wld *World, ent *Entity, vec Vector) (delay int, exec func()) {
 	behavior := Behaviors[abl.Name]
-	return behavior.Execute(abl, wld, org, vec)
+	return behavior.Execute(abl, wld, ent, vec)
 }
 
 type BehaviorIndex map[string]Behavior

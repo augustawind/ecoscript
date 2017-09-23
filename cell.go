@@ -5,56 +5,56 @@ import (
 )
 
 type Cell struct {
-	occupier *Organism
+	occupier *Entity
 	stack    *orgStack
 }
 
 type orgStack struct {
-	organisms []*Organism
-	indexes   map[OrganismID]int
+	entities []*Entity
+	indexes  map[EntityID]int
 }
 
 func newCell() *Cell {
 	cell := new(Cell)
 	cell.stack = new(orgStack)
-	cell.stack.organisms = make([]*Organism, 0)
-	cell.stack.indexes = make(map[OrganismID]int)
+	cell.stack.entities = make([]*Entity, 0)
+	cell.stack.indexes = make(map[EntityID]int)
 	return cell
 }
 
 func (c *Cell) Population() int {
-	return len(c.stack.organisms)
+	return len(c.stack.entities)
 }
 
 func (c *Cell) Occupied() bool {
 	return c.occupier != nil
 }
 
-func (c *Cell) Occupier() *Organism {
+func (c *Cell) Occupier() *Entity {
 	return c.occupier
 }
 
-func (c *Cell) Organisms() []*Organism {
-	return c.stack.organisms
+func (c *Cell) Entities() []*Entity {
+	return c.stack.entities
 }
 
-func (c *Cell) Shuffled() []*Organism {
-	orgs := c.Organisms()
-	shuffled := make([]*Organism, len(orgs))
+func (c *Cell) Shuffled() []*Entity {
+	orgs := c.Entities()
+	shuffled := make([]*Entity, len(orgs))
 	for i, j := range rand.Perm(len(orgs)) {
 		shuffled[i] = orgs[j]
 	}
 	return shuffled
 }
 
-func (c *Cell) Exists(org *Organism) bool {
-	if !org.Walkable() {
-		if c.occupier.ID() == org.ID() {
+func (c *Cell) Exists(ent *Entity) bool {
+	if !ent.Walkable() {
+		if c.occupier.ID() == ent.ID() {
 			return true
 		}
 	} else {
 		for id := range c.stack.indexes {
-			if id == org.ID() {
+			if id == ent.ID() {
 				return true
 			}
 		}
@@ -62,30 +62,30 @@ func (c *Cell) Exists(org *Organism) bool {
 	return false
 }
 
-func (c *Cell) Add(org *Organism) (exec action, ok bool) {
-	if !org.Walkable() {
+func (c *Cell) Add(ent *Entity) (exec action, ok bool) {
+	if !ent.Walkable() {
 		if c.Occupied() {
 			return
 		}
 
-		index := c.stack.indexes[org.ID()]
-		exec, ok = c.setAt(index, org)
+		index := c.stack.indexes[ent.ID()]
+		exec, ok = c.setAt(index, ent)
 		if !ok {
 			return
 		}
-		c.occupier = org
+		c.occupier = ent
 	}
 
 	exec = chain(exec, func() {
-		index := len(c.stack.organisms)
-		c.stack.organisms = append(c.stack.organisms, org)
-		c.stack.indexes[org.ID()] = index
+		index := len(c.stack.entities)
+		c.stack.entities = append(c.stack.entities, ent)
+		c.stack.indexes[ent.ID()] = index
 	})
 	ok = true
 	return
 }
 
-//func (c *Cell) setOccupier(org *Organism) (exec action, ok bool) {
+//func (c *Cell) setOccupier(ent *Entity) (exec action, ok bool) {
 //	prevOrg := c.occupier
 //	index := c.stack.indexes[prevOrg.ID()]
 //	exec, ok = c.removeIndex(index)
@@ -94,39 +94,39 @@ func (c *Cell) Add(org *Organism) (exec action, ok bool) {
 //	}
 //
 //	exec = chain(exec, func() {
-//		c.stack.indexes[org.ID()] = index
+//		c.stack.indexes[ent.ID()] = index
 //		delete(c.stack.indexes, prevOrg.ID())
-//		c.occupier = org
+//		c.occupier = ent
 //	})
 //	ok = true
 //	return
 //}
 //
-//func (c *Cell) setOccupier(org *Organism) (exec action, ok bool) {
+//func (c *Cell) setOccupier(ent *Entity) (exec action, ok bool) {
 //	prevOrg := c.occupier
 //	index := c.stack.indexes[prevOrg.ID()]
-//	exec, ok = c.setAt(index, org)
+//	exec, ok = c.setAt(index, ent)
 //	if !ok {
 //		return
 //	}
 //
 //	exec = chain(exec, func() {
-//		c.stack.indexes[org.ID()] = index
+//		c.stack.indexes[ent.ID()] = index
 //		delete(c.stack.indexes, prevOrg.ID())
-//		c.occupier = org
+//		c.occupier = ent
 //	})
 //	ok = true
 //	return
 //}
 
-func (c *Cell) Remove(org *Organism) (exec action, ok bool) {
-	index := c.stack.indexes[org.ID()]
+func (c *Cell) Remove(ent *Entity) (exec action, ok bool) {
+	index := c.stack.indexes[ent.ID()]
 	exec, ok = c.removeIndex(index)
 	if !ok {
 		return
 	}
 
-	if !org.Walkable() && c.Occupied() && c.occupier.ID() == org.ID() {
+	if !ent.Walkable() && c.Occupied() && c.occupier.ID() == ent.ID() {
 		exec = chain(exec, func() {
 			c.occupier = nil
 		})
@@ -135,21 +135,21 @@ func (c *Cell) Remove(org *Organism) (exec action, ok bool) {
 	return
 }
 
-func (c *Cell) setAt(i int, org *Organism) (exec action, ok bool) {
+func (c *Cell) setAt(i int, ent *Entity) (exec action, ok bool) {
 	exec, ok = c.removeIndex(i)
 	if !ok {
 		return
 	}
 
 	exec = chain(exec, func() {
-		c.stack.indexes[org.ID()] = i
+		c.stack.indexes[ent.ID()] = i
 	})
 	ok = true
 	return
 
 }
 
-func (c *Cell) removeOrg(id OrganismID) (exec action, ok bool) {
+func (c *Cell) removeOrg(id EntityID) (exec action, ok bool) {
 	index, ok := c.stack.indexes[id]
 	if !ok {
 		return
@@ -171,15 +171,15 @@ func (c *Cell) removeOrg(id OrganismID) (exec action, ok bool) {
 func (c *Cell) removeIndex(i int) (exec action, ok bool) {
 	ok = true
 
-	if i >= len(c.stack.organisms) {
+	if i >= len(c.stack.entities) {
 		return
 	}
 
 	exec = func() {
-		copy(c.stack.organisms[i:], c.stack.organisms[i+1:])
-		z := len(c.stack.organisms) - 1
-		c.stack.organisms[z] = nil
-		c.stack.organisms = c.stack.organisms[:z]
+		copy(c.stack.entities[i:], c.stack.entities[i+1:])
+		z := len(c.stack.entities) - 1
+		c.stack.entities[z] = nil
+		c.stack.entities = c.stack.entities[:z]
 	}
 	return
 }
