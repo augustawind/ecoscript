@@ -44,7 +44,7 @@ func (w *World) Tick() {
 
 				for i := range organisms {
 					// Check index each iteration to account for organisms that were removed.
-					if i <= cell.Population() - 1 {
+					if i <= cell.Population()-1 {
 						break
 					}
 					// Tick organism.
