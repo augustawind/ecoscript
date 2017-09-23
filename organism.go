@@ -6,7 +6,6 @@ import (
 
 const (
 	baseActionCost int = -5
-	baseTimeUnits  int = 10
 )
 
 type OrganismID int
@@ -17,12 +16,16 @@ var (
 )
 
 type Organism struct {
-	id        OrganismID
+	id OrganismID
+
 	Name      string      `mapstructure:"name"`
 	Symbol    string      `mapstructure:"symbol"`
 	Attrs     *Attributes `mapstructure:"attributes"`
 	Traits    []Trait     `mapstructure:"traits"`
 	Abilities []*Ability  `mapstructure:"abilities"`
+
+	currentAbility int
+	activity       *Activity
 }
 
 type Attributes struct {
@@ -37,6 +40,7 @@ type Trait string
 func NewOrganism(name, symbol string, attrs *Attributes) *Organism {
 	abilities := make([]*Ability, 0)
 	traits := make([]Trait, 0)
+	activity := NewActivity()
 	*lastOrganismID++
 	return &Organism{
 		id:        *lastOrganismID,
@@ -45,6 +49,7 @@ func NewOrganism(name, symbol string, attrs *Attributes) *Organism {
 		Attrs:     attrs,
 		Traits:    traits,
 		Abilities: abilities,
+		activity:  activity,
 	}
 }
 
@@ -62,16 +67,29 @@ func (o *Organism) AddClasses(traits ...Trait) *Organism {
 }
 
 func (o *Organism) Act(world *World, vec Vector) {
-	t := baseTimeUnits
-	timeUnits := &t
-
-	var unusedAbilities []*Ability
-	copy(unusedAbilities, o.Abilities)
-	for _, ability := range o.Abilities {
-		unusedAbilities = append(unusedAbilities, ability)
+	// Apply universal action energy cost.
+	if alive := o.Transfer(baseActionCost); !alive {
+		execKill, ok := world.Kill(o, vec)
+		if !ok {
+			// TODO: figure out how to handle ok=false here
+			log.Panicf("organism '%s' died, but Kill() failed unexpectedly", o.Name)
+		}
+		execKill()
 	}
+	done := o.nextMove(world, vec)
+	if done {
+		return
+	}
+}
 
-	for {
+func (o *Organism) nextMove(world *World, vec Vector) (done bool) {
+	if o.activity.InProgress() {
+		// Continue activity if in progress.
+		done = o.activity.Continue()
+		if done {
+			return true
+		}
+	} else {
 		// Apply universal action energy cost.
 		if alive := o.Transfer(baseActionCost); !alive {
 			execKill, ok := world.Kill(o, vec)
@@ -80,48 +98,26 @@ func (o *Organism) Act(world *World, vec Vector) {
 				log.Panicf("organism '%s' died, but Kill() failed unexpectedly", o.Name)
 			}
 			execKill()
-			break
+			return true
 		}
-		done := o.NextMove(world, vec, timeUnits, unusedAbilities)
+
+		// Start new activity.
+		ability := o.nextAbility()
+		delay, exec := ability.Execute(world, o, vec)
+		done = o.activity.Begin(delay, exec)
 		if done {
-			break
+			return true
 		}
 	}
+	return false
 }
 
-// TODO: maybe make Organism an interface so this can be more flexible?
-func (o *Organism) NextMove(world *World, vec Vector, timeUnits *int, unusedAbilities []*Ability) (done bool) {
-	// TODO: make this more interesting. This just cycles through each Ability.
-	if len(unusedAbilities) == 0 {
-		done = true
-		return
-	}
-	ability := unusedAbilities[0]
-
-	// Attempt to perform ability.
-	delay, exec := ability.Execute(world, o, vec)
-
-	// Skip ability if not enough time.
-	if *timeUnits-delay < 0 {
-		log.Printf("ability '%s' has delay '%d' but there are only '%d' time units left", ability.Name, delay, timeUnits)
-		return
-	}
-
-	// Make this the last action if time is out.
-	*timeUnits -= delay
-	if *timeUnits == 0 {
-		done = true
-	}
-	exec()
-	unusedAbilities = unusedAbilities[1:]
-	return
+func (o *Organism) nextAbility() *Ability {
+	n := len(o.Abilities) - 1
+	ability := o.Abilities[o.currentAbility%n]
+	o.currentAbility++
+	return ability
 }
-
-//
-//func (o *Organism) chooseAbility(world *World, vec Vector) *Ability {
-//	n := rand.Intn(len(o.Abilities))
-//	return o.Abilities[n]
-//}
 
 // ---------------------------------------------------------------------
 // Behavior API.
