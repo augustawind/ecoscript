@@ -131,8 +131,8 @@ func (c *Cell) Remove(org *Organism) (exec action, ok bool) {
 		return
 	}
 
-	if org.Walkable() && c.Occupied() && c.occupier.ID() == org.ID() {
-		exec.Append(func() {
+	if !org.Walkable() && c.Occupied() && c.occupier.ID() == org.ID() {
+		exec = exec.Append(func() {
 			c.occupier = nil
 		})
 		ok = true
