@@ -38,7 +38,7 @@ func (w *World) Tick() {
 		// For each cell...
 		for _, y := range rand.Perm(layer.Height()) {
 			for _, x := range rand.Perm(layer.Width()) {
-				vec := Vector{x, y, z}
+				vec := Vec(x, y, z)
 				cell := layer.Cell(vec)
 				organisms := cell.Shuffled()
 
@@ -59,7 +59,7 @@ func (w *World) Tick() {
 		//------------------------------------------
 		//for y := 0; y < layer.Height(); y++ {
 		//	for x := 0; x < layer.Width(); x++ {
-		//		vec := Vec2D(x, y)
+		//		vec := To2D(x, y)
 		//		cell := layer.Cell(vec)
 		//		organisms := cell.Organisms()
 		//

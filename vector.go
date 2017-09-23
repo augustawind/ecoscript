@@ -5,28 +5,43 @@ import (
 )
 
 type Vector struct {
-	X int
-	Y int
-	Z int
+	X     int
+	Y     int
+	Z     int
+	vec2D bool
+}
+
+func Vec(x, y, z int) Vector {
+	return Vector{X: x, Y: y, Z: z, vec2D: false}
 }
 
 func Vec2D(x, y int) Vector {
-	return Vector{X: x, Y: y, Z: 0}
+	return Vector{X: x, Y: y, Z: 0, vec2D: true}
 }
 
-// Is3D returns whether the Vector has a Z dimension.
+// Is3D returns true if the Vector is 3-dimensional.
 func (v Vector) Is3D() bool {
-	return v.Z >= 0
+	return !v.vec2D
+}
+
+// To2D converts a Vector to a 2-dimensional Vector.
+func (v Vector) To2D() Vector {
+	return Vec2D(v.X, v.Y)
 }
 
 // Equals returns whether the given Vector is identical.
 func (v Vector) Equals(a Vector) bool {
-	return v.X == a.X && v.Y == a.Y
+	equal := v.X == a.X && v.Y == a.Y
+	if v.Is3D() {
+		equal = equal && v.Z == a.Z
+	}
+	return equal
 }
 
 // Compare compares the Vector with another by flattening each Vector and then
 // comparing ordinality. It returns 1, 0, or -1 if the Vector is greater than,
-// equal to, or less than the subject, respectively.
+// equal to, or less than the subject, respectively. It always compares
+// Vectors as if they're 2D.
 func (v Vector) Compare(a Vector) int {
 	sumV := v.Flatten(1)
 	sumA := a.Flatten(1)
@@ -40,19 +55,19 @@ func (v Vector) Compare(a Vector) int {
 
 // Plus creates a new Vector by adding X, Y, and Z values.
 func (v Vector) Plus(a Vector) Vector {
-	return Vector{v.X + a.X, v.Y + a.Y, v.Z + a.Z}
+	return Vec(v.X+a.X, v.Y+a.Y, v.Z+a.Z)
 }
 
 // Minus creates a new Vector by subtracting each of the subject's X, Y, and
 // Z values from each of its X, Y, and Z values, respectively.
 func (v Vector) Minus(a Vector) Vector {
-	return Vector{v.X - a.X, v.Y - a.Y, v.Z - a.Z}
+	return Vec(v.X-a.X, v.Y-a.Y, v.Z-a.Z)
 }
 
 // Map creates a new Vector by applying the given function to each of its
 // X, Y, and Z values, respectively.
 func (v Vector) Map(f func(int) int) Vector {
-	return Vector{f(v.X), f(v.Y), f(v.Z)}
+	return Vec(f(v.X), f(v.Y), f(v.Z))
 }
 
 // Dir creates a new Vector by converting each of its X, Y, and Z values to
@@ -75,7 +90,8 @@ func (v Vector) Flatten(nRows int) int {
 	return v.X + (v.Y * nRows)
 }
 
-// Radius returns the surrounding Vectors by the given radius.
+// Radius returns the surrounding Vectors by the given radius, ignoring the
+// Z axis.
 func (v Vector) Radius(radius int) []Vector {
 	n := (2*radius + 1) ^ 2 - 1
 	vectors := make([]Vector, n)
