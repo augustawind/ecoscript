@@ -51,3 +51,7 @@ run:
   examples:
     - description: don't build if check fails (set -e)
       command: robo all -e
+
+install-hooks:
+  summary: symlink bundled git hooks to .git/hooks/
+  command: ln -s $(pwd)/tools/hooks/* $(pwd)/.git/hooks

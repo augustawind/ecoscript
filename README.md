@@ -39,9 +39,13 @@ To get help on a specific task, use `robo help` with the task name:
 robo help TASK
 ```
 
-### best practices
+### useful commands
 
-The two most useful tasks are `check` and `all`.
+`run` compiles and runs the project on the fly.
+
+```console
+robo run
+```
 
 `check` asserts code quality. It vets, formats, and lints the project and runs
 the unit tests.
@@ -52,7 +56,8 @@ Run this whenever you edit the project.
 robo check
 ```
 
-`all` safely builds the project by running `check` and then building it.
+`all` safely builds the project by running `check` and then building it only
+if all checks pass.
 
 Run this before pushing changes to the repo.
 
@@ -60,9 +65,25 @@ Run this before pushing changes to the repo.
 robo all
 ```
 
- There is `pre-push` hook in `tools/` that does this. To use it, just copy it
- to `.git/hooks/`:
+If arguments are given to the `check` and `all` tasks, the shell builtin `set`
+will be called with those arguments. For example, the `-e` option can be used
+to exit early if any check fails:
 
- ```console
-cp tools/pre-push .git/hooks 
+```console
+robo check -e
+robo all -e
+```
+
+A `pre-push` git hook that runs is included in `tools/hooks/`. To use it, just
+copy it to `.git/hooks/`:
+
+```console
+cp tools/hooks/pre-push .git/hooks 
  ```
+
+Alternatively, just run the `install-hooks` command to symlink all bundled git
+hooks to the `.git/hooks/` directory:
+
+```console
+robo install-hooks
+```
