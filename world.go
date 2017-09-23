@@ -1,5 +1,7 @@
 package main
 
+import "math/rand"
+
 // ---------------------------------------------------------------------
 // World
 
@@ -24,6 +26,49 @@ func NewWorld(width, height int, layerNames []string) *World {
 		world.addLayer(z, name)
 	}
 	return world
+}
+
+func (w *World) Tick() {
+	// For each layer...
+	for z := 0; z < w.Depth(); z++ {
+		layer := w.Layer(z)
+
+		// For each cell...
+		for _, y := range rand.Perm(layer.Height()) {
+			for _, x := range rand.Perm(layer.Width()) {
+				vec := Vec2D(x, y)
+				cell := layer.Cell(vec)
+				organisms := cell.Shuffled()
+
+				for i := range organisms {
+					// Check index each iteration to account for organisms that were removed.
+					if i == cell.Population() {
+						break
+					}
+					// Tick organism.
+					org := organisms[i]
+					// TODO: MAYBE (?) suspend actions until end to resolve conflicts (?)
+					org.Tick(w, vec)
+				}
+			}
+		}
+
+		//<<< sequential iteration through world >>>
+		//------------------------------------------
+		//for y := 0; y < layer.Height(); y++ {
+		//	for x := 0; x < layer.Width(); x++ {
+		//		vec := Vec2D(x, y)
+		//		cell := layer.Cell(vec)
+		//		organisms := cell.Organisms()
+		//
+		//		for i := range organisms {
+		//			org := organisms[i]
+		//			org.Tick(w, vec)
+		//		}
+		//	}
+		//}
+		//------------------------------------------
+	}
 }
 
 func (w *World) addLayer(z int, name string) *Layer {

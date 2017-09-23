@@ -66,50 +66,27 @@ func (o *Organism) AddClasses(traits ...Trait) *Organism {
 	return o
 }
 
-func (o *Organism) Act(world *World, vec Vector) {
-	// Apply universal action energy cost.
-	if alive := o.Transfer(baseActionCost); !alive {
-		execKill, ok := world.Kill(o, vec)
-		if !ok {
-			// TODO: figure out how to handle ok=false here
-			log.Panicf("organism '%s' died, but Kill() failed unexpectedly", o.Name)
-		}
-		execKill()
-	}
-	done := o.nextMove(world, vec)
-	if done {
-		return
-	}
-}
-
-func (o *Organism) nextMove(world *World, vec Vector) (done bool) {
+func (o *Organism) Tick(world *World, vec Vector) {
+	// If activity in progress, continue it. Otherwise, start a new activity.
 	if o.activity.InProgress() {
-		// Continue activity if in progress.
-		done = o.activity.Continue()
-		if done {
-			return true
-		}
+		o.activity.Continue()
 	} else {
 		// Apply universal action energy cost.
 		if alive := o.Transfer(baseActionCost); !alive {
+			// If energy depleted, kill and remove organism.
 			execKill, ok := world.Kill(o, vec)
 			if !ok {
 				// TODO: figure out how to handle ok=false here
 				log.Panicf("organism '%s' died, but Kill() failed unexpectedly", o.Name)
 			}
 			execKill()
-			return true
-		}
-
-		// Start new activity.
-		ability := o.nextAbility()
-		delay, exec := ability.Execute(world, o, vec)
-		done = o.activity.Begin(delay, exec)
-		if done {
-			return true
+		} else {
+			// Start new activity.
+			ability := o.nextAbility()
+			delay, exec := ability.Execute(world, o, vec)
+			o.activity.Begin(delay, exec)
 		}
 	}
-	return false
 }
 
 func (o *Organism) nextAbility() *Ability {
