@@ -44,7 +44,7 @@ func (w *World) Tick() {
 
 				for i := range organisms {
 					// Check index each iteration to account for organisms that were removed.
-					if i == cell.Population() {
+					if i <= cell.Population() - 1 {
 						break
 					}
 					// Tick organism.
@@ -116,7 +116,11 @@ func (w *World) Cell(vec Vector) *Cell {
 }
 
 func (w *World) InBounds(vec Vector) bool {
-	return SpaceInBounds(w, vec)
+	inBounds := SpaceInBounds(w, vec)
+	if vec.Is3D() {
+		inBounds = inBounds && vec.Z >= 0 && vec.Z < w.Depth()
+	}
+	return inBounds
 }
 
 func (w *World) Walkable(vec Vector) bool {
