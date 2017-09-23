@@ -62,24 +62,11 @@ abilities:
       energy: rate * 2
 
 
-  - name: consume
-    summary: Consume a walkable Entity on the same tile, gaining energy from it.
-    properties:
-
-      traits:
-        summary: what the Entity can consume
-        type: list
-        minItems: 1
-        items:
-          summary: trait name
-          type: string
-
-
   - name: move
     summary: move around
     properties:
 
-      changeRate:
+      switchRate:
         summary: probability of randomly changing movement dir
         notes: will attempt to change dir when obstacle in path, regardless
         type: float
@@ -110,7 +97,7 @@ abilities:
 
 
   - name: sense
-    summary: identify specific Entities
+    summary: identify specific entities
     properties:
 
       sensitivity:
@@ -151,26 +138,44 @@ abilities:
                   type: int
 
 
+  - name: consume
+    summary: consume a walkable entity on the same tile, gaining energy from it
+    inherits:
+      - sense
+
+
   - name: seek
-    summary: search for specific Entities
+    summary: search for specific entities
     inherits:
       - sense
       - move
     defaults:
-      changeRate: 0.25
+      switchRate: 0.25
       moveRate: 1.0
+
 
   - name: pursue
-    summary: move toward specific Entities
+    summary: move toward specific entities
     inherits:
       - sense
       - move
     defaults:
-      changeRate: 0.0
+      switchRate: 0.0
       moveRate: 1.0
 
+
+  - name: flee
+    summary: move away from specific entities
+    inherits:
+      - sense
+      - move
+    defaults:
+      switchRate: 0.0
+      moveRate: 1.0
+
+
   - name: attack
-    summary: attempt to kill specific Entities
+    summary: attempt to kill specific entities
     inherits:
       - sense
     properties:
@@ -187,3 +192,63 @@ abilities:
         minValue: 1
         maxValue: 100
 
+
+  - name: defend
+    summary: defend from attackers
+    inherits:
+      - sense
+    properties:
+
+      deflection:
+        summary: proficiency in deflecting successful attacks
+        type: int
+        minValue: 1
+        maxValue: 100
+
+      evasion:
+        summary: proficiency in dodging attempted attacks
+        type: int
+        minValue: 1
+        maxValue: 100
+
+
+  - name: gather
+    summary: collect specific entities
+    inherits:
+      - seek
+      - pursue
+    defaults:
+      move.switchRate: 0.1
+      move.moveRate: 1.0
+
+
+  - name: nest
+    summary: find and stay at a specific location
+    inherits:
+      - seek
+    defaults:
+      move.switchRate: 0.5
+      move.moveRate: 0.25
+    properties:
+
+      radius:
+        summary: radius of nesting space around origin
+        type: int
+        minValue: 0
+        maxValue: 30
+
+      origin:
+        summary: center of nesting space
+        type: object
+        properties:
+
+          x:
+            summary: x coordinate
+            type: int
+          y:
+            summary: y coordinate
+            type: int
+
+
+  - name: hoard
+    summary: hoard specific entities at a designated stash
