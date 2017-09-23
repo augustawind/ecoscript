@@ -1,17 +1,48 @@
 ---
 
+# Here is the specification for properties shared by all Abilities. They are
+# implicitly present as entries in the "properties" object of each Ability.
+#
+# Properties specifications use the following fields:
+#
+# summary - short, one-line description
+# type - data type of the property
+#
+# When "type" is a number type (int, float):
+#
+# minValue - minimum value the property can hold
+# maxValue - maximum value the property can hold
+#
+# When "type" is "list":
+#
+# minItems - minimum number of items that must be present
+# maxItems - maximum number of items that can be present
+#
+# When "type" is "object":
+#
+# properties - nested property specification that describes the value
+
 common:
 
-  summary: properties shared by all abilities
-  properties:
-      delay:
-        summary: time it takes to act
-        type: int
-        minValue: 1
-        maxValue: 3
-        conversions:
-          ticks: delay
+  delay:
+    summary: time it takes to act
+    notes: |
+      this value represents the number of ticks the ability takes to execute
+    type: int
+    minValue: 1
+    maxValue: 30
 
+
+# Here is the specification for each specific Ability. Each entry uses the
+# following fields:
+#
+# name - a unique, human-readable identifier, ASCII letters only
+# summary - a short, one line description
+# inherits - list of abilities to inherit properties from
+# notes - additional information; may span multiple lines
+# properties - supported properties indexed by property name
+# defaults - default values for each property
+# conversions - value conversions related to specific properties
 
 abilities:
 
@@ -121,8 +152,38 @@ abilities:
 
 
   - name: seek
-    summary: search and move toward specific Entities
+    summary: search for specific Entities
     inherits:
+      - sense
       - move
+    defaults:
+      changeRate: 0.25
+      moveRate: 1.0
+
+  - name: pursue
+    summary: move toward specific Entities
+    inherits:
+      - sense
+      - move
+    defaults:
+      changeRate: 0.0
+      moveRate: 1.0
+
+  - name: attack
+    summary: attempt to kill specific Entities
+    inherits:
+      - sense
     properties:
-      sensitivity:
+
+      strength:
+        summary: force of attacks
+        type: int
+        minValue: 1
+        maxValue: 100
+
+      accuracy:
+        summary: accuracy of attacks
+        type: int
+        minValue: 1
+        maxValue: 100
+

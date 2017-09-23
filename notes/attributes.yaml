@@ -2,23 +2,24 @@
 attributes:
 
   walkable:
-    short: Whether the Entity occupies a space. False means it does.
+    summary: whether the entity occupies a cell
     type: bool
 
   energy:
-    short: The life force of the Entity. Zero means annihilation.
+    summary: the life force of the entity
+    notes: If this goes to zero the entity is destroyed.
     type: int
     minValue: 0
     maxValue: 100
 
   metabolism:
-    short: How quickly the Entity loses energy over time.
+    summary: how quickly the entity loses energy over time
     type: int
     minValue: 0
     maxValue: 20
 
   size:
-    short: The physical size of the Entity.
+    summary: the physical size of the entity
     notes: |
       Aliases for each possible value.
         - 1 -> tiny
@@ -31,9 +32,15 @@ attributes:
     maxValue: 5
 
   mass:
-    short: How much mass the Entity contains.
+    summary: how much mass the entity contains
     type: int
     minValue: 1
     maxValue: 20
     conversions:
       energy: mass * entity.size
+
+  durability:
+    summary: resistance to damage
+    type: int
+    minValue: 1
+    maxValue: 100
