@@ -78,7 +78,7 @@ func (bhv *Consume) Execute(abl *Ability, wld *World, org *Organism, vec Vector)
 			if bhv.isEdible(abl, org) {
 				execKill, ok := wld.Kill(organism, vec)
 				if ok {
-					energy := bhv.consumeBiomass(organism.Biomass())
+					energy := bhv.biomassToEnergy(organism.Biomass())
 					delay = 15
 					exec = func() {
 						execKill()
@@ -108,7 +108,7 @@ func (bhv *Consume) diet(abl *Ability) []Trait {
 	return abl.Get("diet").([]Trait)
 }
 
-func (bhv *Consume) consumeBiomass(biomass int) int {
+func (bhv *Consume) biomassToEnergy(biomass int) int {
 	return -biomass
 }
 
