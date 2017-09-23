@@ -118,7 +118,7 @@ func (bhv *Consume) biomassToEnergy(biomass int) int {
 type Move struct{}
 
 func (bhv *Move) Name() string {
-	return "flow"
+	return "move"
 }
 
 func (bhv *Move) Defaults() Properties {

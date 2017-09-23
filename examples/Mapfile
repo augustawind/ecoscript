@@ -38,8 +38,10 @@ atlas:
 #        grid: examples/maps/forest
 
   legend:
-    'A': pine-tree
-    '&': sheep
+    - symbol: 'A'
+      organism: 'pine-tree'
+    - symbol: '&'
+      organism: 'sheep'
 
 organisms:
 
