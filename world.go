@@ -159,8 +159,8 @@ func (w *World) Move(organism *Organism, src Vector, dst Vector) (exec action, o
 	return SpaceMove(w, organism, src, dst)
 }
 
-func (w *World) Kill(organism *Organism, vec Vector) (exec action, ok bool) {
-	return SpaceKill(w, organism, vec)
+func (w *World) Destroy(organism *Organism, vec Vector) (exec action, ok bool) {
+	return SpaceDestroy(w, organism, vec)
 }
 
 // ---------------------------------------------------------------------
@@ -231,6 +231,6 @@ func (l *Layer) Move(organism *Organism, src Vector, dst Vector) (exec action, o
 	return SpaceMove(l, organism, src, dst)
 }
 
-func (l *Layer) Kill(organism *Organism, vec Vector) (exec action, ok bool) {
-	return SpaceKill(l, organism, vec)
+func (l *Layer) Destroy(organism *Organism, vec Vector) (exec action, ok bool) {
+	return SpaceDestroy(l, organism, vec)
 }

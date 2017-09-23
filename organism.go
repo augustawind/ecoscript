@@ -1,14 +1,5 @@
 package main
 
-import (
-	"log"
-)
-
-const (
-	//baseActionCost int = 5
-	baseActionCost int = 0
-)
-
 type OrganismID int
 
 var (
@@ -16,6 +7,7 @@ var (
 	lastOrganismID *OrganismID = &oid
 )
 
+// Organism represents an entity in the world.
 type Organism struct {
 	id OrganismID
 
@@ -72,21 +64,10 @@ func (o *Organism) Tick(world *World, vec Vector) {
 	if o.activity.InProgress() {
 		o.activity.Continue()
 	} else {
-		// Apply universal action energy cost.
-		if alive := o.Transfer(-baseActionCost); !alive {
-			// If energy depleted, kill and remove organism.
-			execKill, ok := world.Kill(o, vec)
-			if !ok {
-				// TODO: figure out how to handle ok=false here
-				log.Panicf("organism '%s' died, but Kill() failed unexpectedly", o.Name)
-			}
-			execKill()
-		} else {
-			// Start new activity.
-			ability := o.nextAbility()
-			delay, exec := ability.Execute(world, o, vec)
-			o.activity.Begin(delay, exec)
-		}
+		// Start new activity.
+		ability := o.nextAbility()
+		delay, exec := ability.Execute(world, o, vec)
+		o.activity.Begin(delay, exec)
 	}
 }
 

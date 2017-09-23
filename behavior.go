@@ -76,12 +76,12 @@ func (bhv *Consume) Execute(abl *Ability, wld *World, org *Organism, vec Vector)
 		for j := range orgs {
 			organism := orgs[j]
 			if bhv.isEdible(abl, org) {
-				execKill, ok := wld.Kill(organism, vec)
+				execDestroy, ok := wld.Destroy(organism, vec)
 				if ok {
 					energy := bhv.biomassToEnergy(organism.Biomass())
 					delay = 15
 					exec = func() {
-						execKill()
+						execDestroy()
 						organism.Transfer(energy)
 					}
 				}

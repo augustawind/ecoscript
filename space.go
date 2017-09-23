@@ -46,7 +46,7 @@ type Space interface {
 
 	// Remove attempts to remove and kill an Organism at the given Vector.
 	// It returns true if it succeeded or false if it wasn't found.
-	Kill(org *Organism, vec Vector) (action, bool)
+	Destroy(org *Organism, vec Vector) (action, bool)
 
 	// Move attempts to move an Organism from one Vector to another
 	// It returns true if it succeeded or false if it wasn't found.
@@ -110,7 +110,7 @@ func SpaceMove(s Space, organism *Organism, src Vector, dst Vector) (exec action
 	return
 }
 
-func SpaceKill(s Space, organism *Organism, vec Vector) (exec action, ok bool) {
+func SpaceDestroy(s Space, organism *Organism, vec Vector) (exec action, ok bool) {
 	// TODO: implement corpses
 	exec, ok = s.Remove(organism, vec)
 	if ok {
