@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"time"
 )
 
 func main() {
@@ -12,5 +13,10 @@ func main() {
 	}
 
 	world := mapfile.ToWorld()
-	fmt.Println(world.Layer(0).Display())
+
+	for {
+		fmt.Println(world.Layer(0).Display())
+		world.Tick()
+		time.Sleep(500 * time.Millisecond)
+	}
 }

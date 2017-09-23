@@ -1,6 +1,8 @@
 package main
 
-import "math/rand"
+import (
+	"math/rand"
+)
 
 // ---------------------------------------------------------------------
 // World
@@ -36,7 +38,7 @@ func (w *World) Tick() {
 		// For each cell...
 		for _, y := range rand.Perm(layer.Height()) {
 			for _, x := range rand.Perm(layer.Width()) {
-				vec := Vec2D(x, y)
+				vec := Vector{x, y, z}
 				cell := layer.Cell(vec)
 				organisms := cell.Shuffled()
 

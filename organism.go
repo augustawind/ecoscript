@@ -91,6 +91,9 @@ func (o *Organism) Tick(world *World, vec Vector) {
 
 func (o *Organism) nextAbility() *Ability {
 	n := len(o.Abilities) - 1
+	if n == 0 {
+		n = 1
+	}
 	ability := o.Abilities[o.currentAbility%n]
 	o.currentAbility++
 	return ability

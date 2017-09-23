@@ -66,12 +66,12 @@ robo all
 ```
 
 If arguments are given to the `check` and `all` tasks, the shell builtin `set`
-will be called with those arguments. For example, the `-e` option can be used
-to exit early if any check fails:
+will be called with those arguments. For example, the `+e` option can be used
+to disable the behavior which exits early if a command fails:
 
 ```console
-robo check -e
-robo all -e
+robo check +e
+robo all +e
 ```
 
 A `pre-push` git hook that runs is included in `tools/hooks/`. To use it, just

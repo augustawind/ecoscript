@@ -17,6 +17,7 @@ test:
 check:
   summary: run vet, fmt, lint, test
   command: |
+    set -e
     if [ $# != 0 ]; then
       set "$@"
     fi;
@@ -38,6 +39,7 @@ build:
 all:
   summary: run all checks, then build
   command: |
+    set -e
     if [ $# != 0 ]; then
       set "$@"
     fi;
