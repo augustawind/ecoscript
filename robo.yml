@@ -56,4 +56,4 @@ run:
 
 install-hooks:
   summary: symlink bundled git hooks to .git/hooks/
-  command: ln -s $(pwd)/tools/hooks/* $(pwd)/.git/hooks
+  script: tools/install-hooks.sh
