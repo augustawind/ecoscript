@@ -44,7 +44,7 @@ type Space interface {
 	// It returns true if it succeeded or false if it wasn't found.
 	Remove(org *Organism, vec Vector) (action, bool)
 
-	// Remove attempts to remove and kill an Organism at the given Vector.
+	// Destroy attempts to remove and destroy an Organism at the given Vector.
 	// It returns true if it succeeded or false if it wasn't found.
 	Destroy(org *Organism, vec Vector) (action, bool)
 
