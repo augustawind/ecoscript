@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"time"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 func main() {
@@ -20,3 +22,12 @@ func main() {
 		time.Sleep(500 * time.Millisecond)
 	}
 }
+
+func show(s ...interface{}) {
+	spew.Dump(fmt.Sprint(s...))
+}
+
+func showf(format string, a ...interface{}) {
+	spew.Dump(fmt.Sprintf(format, a...))
+}
+

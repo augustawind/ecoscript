@@ -5,7 +5,8 @@ import (
 )
 
 const (
-	baseActionCost int = 5
+	//baseActionCost int = 5
+	baseActionCost int = 0
 )
 
 type OrganismID int
