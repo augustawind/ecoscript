@@ -121,6 +121,13 @@ func SpaceKill(s Space, organism *Organism, vec Vector) (exec action, ok bool) {
 
 type action func()
 
+func (a action) Append(b action) action {
+	return func() {
+		a()
+		b()
+	}
+}
+
 func chain(actions ...action) action {
 	return func() {
 		for i := range actions {

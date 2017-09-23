@@ -120,18 +120,17 @@ func (c *Cell) Add(org *Organism) (exec action, ok bool) {
 //}
 
 func (c *Cell) Remove(org *Organism) (exec action, ok bool) {
-	if org.Walkable() {
-		if c.occupier.ID() == org.ID() {
-			exec = func() { c.occupier = nil }
-			ok = true
-		}
-	} else {
-		for id, index := range c.stack.indexes {
-			if id == org.ID() {
-				exec, ok = c.removeIndex(index)
-				break
-			}
-		}
+	index := c.stack.indexes[org.ID()]
+	exec, ok = c.removeIndex(index)
+	if !ok {
+		return
+	}
+
+	if org.Walkable() && c.Occupied() && c.occupier.ID() == org.ID() {
+		exec.Append(func() {
+			c.occupier = nil
+		})
+		ok = true
 	}
 	return
 }
@@ -142,7 +141,7 @@ func (c *Cell) setAt(i int, org *Organism) (exec action, ok bool) {
 		return
 	}
 
-	exec = chain(exec, func() {
+	exec.Append(func() {
 		c.stack.indexes[org.ID()] = i
 	})
 	ok = true
