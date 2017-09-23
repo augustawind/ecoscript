@@ -15,7 +15,7 @@ test:
   command: go test
 
 check:
-  summary: run vet, fmt, lint, test
+  summary: run vet, fmt, test
   command: |
     set -e
     if [ $# != 0 ]; then
@@ -23,7 +23,6 @@ check:
     fi;
     robo vet
     robo fmt
-    robo lint
     robo test
   usage: "[SET-OPTIONS]"
   examples:
