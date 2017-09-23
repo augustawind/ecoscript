@@ -103,4 +103,61 @@ var _ = Describe("World", func() {
 			})
 		})
 	})
+
+	Describe("World#Move()", func() {
+		Context("Organism IS walkable", func() {
+			It("should be moved from one Cell to another", func() {
+				src := Vec(0, 0, 0)
+				exec, ok := world.Add(orgWalkable, src)
+				Expect(ok).To(BeTrue())
+				exec()
+
+				cell := world.Cell(src)
+				Expect(len(cell.Organisms())).To(Equal(1))
+				Expect(cell.Organisms()[0].ID()).To(Equal(orgWalkable.ID()))
+
+				dst := Vec(1, 2, 0)
+				exec, ok = world.Move(orgWalkable, src, dst)
+				Expect(ok).To(BeTrue())
+				exec()
+
+				cell = world.Cell(src)
+				Expect(len(cell.Organisms())).To(Equal(0))
+				cell = world.Cell(dst)
+				Expect(len(cell.Organisms())).To(Equal(1))
+				Expect(cell.Organisms()[0].ID()).To(Equal(orgWalkable.ID()))
+			})
+		})
+
+		Context("Organism is NOT walkable", func() {
+			It("should be moved from one Cell to another and occupancy changed", func() {
+				src := Vec(0, 0, 0)
+				exec, ok := world.Add(orgUnwalkable, src)
+				Expect(ok).To(BeTrue())
+				exec()
+
+				cell := world.Cell(src)
+				Expect(len(cell.Organisms())).To(Equal(1))
+				Expect(cell.Organisms()[0].ID()).To(Equal(orgUnwalkable.ID()))
+				Expect(cell.Occupied()).To(BeTrue())
+				Expect(cell.Occupier().ID()).To(Equal(orgUnwalkable.ID()))
+
+				dst := Vec(1, 2, 0)
+				exec, ok = world.Move(orgUnwalkable, src, dst)
+				Expect(ok).To(BeTrue())
+				exec()
+
+				cell = world.Cell(src)
+				Expect(len(cell.Organisms())).To(Equal(0))
+				Expect(cell.Occupied()).To(BeFalse())
+				Expect(cell.Occupier()).To(BeNil())
+
+				cell = world.Cell(dst)
+				Expect(len(cell.Organisms())).To(Equal(1))
+				Expect(cell.Organisms()[0].ID()).To(Equal(orgUnwalkable.ID()))
+				Expect(cell.Occupied()).To(BeTrue())
+				Expect(cell.Occupier().ID()).To(Equal(orgUnwalkable.ID()))
+			})
+		})
+	})
 })
