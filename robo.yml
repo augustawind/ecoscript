@@ -1,0 +1,37 @@
+vet:
+  summary: analyze and print potential problems
+  command: go vet
+
+fmt:
+  summary: format files in place
+  command: goimports -w *.go
+
+lint:
+  summary: lint files and print results
+  command: golint
+
+test:
+  summary: run unit tests
+  command: go test
+
+check:
+  summary: run vet, fmt, lint, test
+  command: |
+    robo vet
+    robo fmt
+    robo lint
+    robo test
+
+build:
+  summary: compile the app
+  command: go build
+
+all:
+  summary: run all checks, then build
+  command: |
+    robo check
+    robo build
+
+run:
+  summary: run the app
+  command: go run *.go
