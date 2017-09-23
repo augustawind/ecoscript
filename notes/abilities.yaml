@@ -149,6 +149,7 @@ abilities:
     inherits:
       - sense
       - move
+
     defaults:
       switchRate: 0.25
       moveRate: 1.0
@@ -159,6 +160,7 @@ abilities:
     inherits:
       - sense
       - move
+
     defaults:
       switchRate: 0.0
       moveRate: 1.0
@@ -169,6 +171,7 @@ abilities:
     inherits:
       - sense
       - move
+
     defaults:
       switchRate: 0.0
       moveRate: 1.0
@@ -217,20 +220,28 @@ abilities:
     inherits:
       - seek
       - pursue
+
     defaults:
       move.switchRate: 0.1
       move.moveRate: 1.0
+
+    properties:
+      goal:
+        summary: amount to stop collecting at
+        type: int
+        minValue: 1
 
 
   - name: nest
     summary: find and stay at a specific location
     inherits:
       - seek
+
     defaults:
       move.switchRate: 0.5
       move.moveRate: 0.25
-    properties:
 
+    properties:
       radius:
         summary: radius of nesting space around origin
         type: int
@@ -241,7 +252,6 @@ abilities:
         summary: center of nesting space
         type: object
         properties:
-
           x:
             summary: x coordinate
             type: int
@@ -251,4 +261,8 @@ abilities:
 
 
   - name: hoard
-    summary: hoard specific entities at a designated stash
+    summary: hoard specific entities at nesting space
+    inherits:
+      - gather
+      - nest
+

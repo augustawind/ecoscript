@@ -1,0 +1,15 @@
+---
+
+traits:
+
+  physical:
+
+    - hard/soft
+    - organic/inorganic
+    - complex/simple
+
+  behavioral:
+
+    - mobile/immobile
+    - active/passive
+    - loud/quiet
