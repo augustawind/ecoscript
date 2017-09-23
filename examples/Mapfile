@@ -6,45 +6,46 @@ defaults:
   display_legend: false
 
 atlas:
-      
+
   map:
 
     inline:
       - name: ground
         grid: |
-          $$$$$$$$$$$$$$$$$$$$
-          $$$$$$$$$$$$$$$$$$$$
-          ..$$$$$$$$$$$$$$$$$$
-          $....$$$$$$$$$$$$$$$
-          $$$$..$$$$$$$$$$$$$$
-          $$$$$..$$....$$$$$$$
-          $$$$$$....$$..$$$$$$
-          $$$$$$$$$$$.$..$$$$$
-          $$$$$$$$$........$$$
-          $$$$$$$$.......$$.$$
-          $$$$$$$....$.......$
-          $$$$$$$..$$........$
-          $$$$$$$.$$$.$......$
-          $$$$$$$$.$$$......$$
-          $$$$$$$$$$.......$$$
-          $$$$$$$$$$$....$$$$$
-          $$$$$$.........$$$$$
-          $$$..............$$$
-          $..............$$$$$
-          $$$......$$$$$$$$$$$
+          AAAAAAAAAAAAAAAAAAAA
+          AAAAAAAAAAAAAAAAAAAA
+          ..AAAAAAAAAAAAAAAAAA
+          A....AAAAAAAAAAAAAAA
+          AAAA..AAAAAAAAAAAAAA
+          AAAAA..AA....AAAAAAA
+          AAAAAA....AA..AAAAAA
+          AAAAAAAAAAA.A..AAAAA
+          AAAAAAAAA........AAA
+          AAAAAAAA.......AA.AA
+          AAAAAAA....A.......A
+          AAAAAAA..AA.....&..A
+          AAAAAAA.AAA.A......A
+          AAAAAAAA.AAA......AA
+          AAAAAAAAAA.......AAA
+          AAAAAAAAAAA....AAAAA
+          AAAAAA.........AAAAA
+          AAA..............AAA
+          A..............AAAAA
+          AAA......AAAAAAAAAAA
 
 #    files:
 #      - name: ground
 #        grid: examples/maps/forest
 
   legend:
-    '$': 'pine-tree'
+    'A': pine-tree
+    '&': sheep
 
 organisms:
 
   pine-tree:
     name: pine tree
-    symbol: '$'
+    symbol: 'A'
 
     attributes:
       walkable: false
@@ -53,6 +54,7 @@ organisms:
       mass: 100
 
     traits:
+      - plant
       - producer
       - static
 
@@ -76,9 +78,8 @@ organisms:
       - herbivore
 
     abilities:
-      - name: eat
+      - name: move
+      - name: consume
         properties:
           diet:
-            required:
-            preferred:
-            forbidden:
+            - plant
