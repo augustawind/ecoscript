@@ -17,10 +17,13 @@ followed the instructions in [installation](installation), the source code
 should be in `$GOPATH/src/github.com/dustinrohde/ecoscript/`.
 
 Task management is handled with [robo](https://github.com/tj/robo), a Go task
-runner. To install via `go get`:
+runner. You will also need [goimports](golang.org/x/tools/cmd/goimports) and
+[golint](github.com/golang/lint). To install via `go get`:
 
 ```console
-go get github.com/tj/robo
+go get -u github.com/tj/robo
+go get -u golang.org/x/tools/cmd/goimports
+go get -u github.com/golang/lint
 ```
 
 ### list available tasks
