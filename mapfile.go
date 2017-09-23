@@ -202,12 +202,6 @@ func (m *Mapfile) cleanLegendOrganisms() error {
 func (m *Mapfile) cleanOrganismAttrs() error {
 	var result error
 	for _, org := range m.Organisms {
-		for _, ability := range org.Abilities {
-			if ability.Properties == nil {
-				ability.Properties = make(Properties)
-			}
-		}
-
 		if err := vStringMinLen(org.Name, 2, "name"); err != nil {
 			result = multierror.Append(result, err)
 		}
@@ -288,9 +282,21 @@ func (m *Mapfile) ToWorld() *World {
 				// Create new Organism.
 				key := m.Atlas.Legend[symbol]
 				data := m.Organisms[key]
+
+				abilities := make([]*Ability, len(data.Abilities))
+				for i := range data.Abilities {
+					rawAbility := data.Abilities[i]
+					behavior := Behaviors[rawAbility.Name]
+					properties := rawAbility.Properties
+					if properties == nil {
+						properties = make(Properties)
+					}
+					abilities[i] = behavior.Ability(properties)
+				}
+
 				org := NewOrganism(data.Name, data.Symbol, data.Attrs).
 					AddClasses(data.Traits...).
-					AddAbilities(data.Abilities...)
+					AddAbilities(abilities...)
 
 				// Add Organism to Layer.
 				exec, ok := layer.Add(org, Vec2D(x, y))

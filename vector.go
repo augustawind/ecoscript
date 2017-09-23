@@ -11,7 +11,7 @@ type Vector struct {
 }
 
 func Vec2D(x, y int) Vector {
-	return Vector{X: x, Y: y, Z: -1}
+	return Vector{X: x, Y: y, Z: 0}
 }
 
 // Is3D returns whether the Vector has a Z dimension.

@@ -32,18 +32,9 @@ func (abl *Ability) Execute(wld *World, org *Organism, vec Vector) (delay int, e
 
 type BehaviorIndex map[string]Behavior
 
-func NewBehaviorIndex(behaviors ...Behavior) BehaviorIndex {
-	index := make(BehaviorIndex)
-	for i := range behaviors {
-		behavior := behaviors[i]
-		index[behavior.Name()] = behavior
-	}
-	return index
+var Behaviors = BehaviorIndex{
+	"grow":    new(Grow),
+	"consume": new(Consume),
+	"move":    new(Move),
+	"wander":  new(Wander),
 }
-
-var Behaviors = NewBehaviorIndex(
-	new(Grow),
-	new(Consume),
-	new(Move),
-	new(Wander),
-)
