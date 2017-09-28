@@ -1,4 +1,4 @@
-package main
+package ecoscript
 
 import (
 	"io/ioutil"

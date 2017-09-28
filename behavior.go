@@ -36,9 +36,13 @@ func (bhv *Grow) Ability(props Properties) *Ability {
 func (bhv *Grow) Execute(abl *Ability, wld *World, ent *Entity, vec Vector) (delay int, exec func()) {
 	delay = 10
 	exec = func() {
-		ent.Transfer(abl.Get("rate").(int))
+		ent.Transfer(abl.rateToEnergy())
 	}
 	return
+}
+
+func (abl *Ability) rateToEnergy() int {
+	return abl.Get("rate").(int) * 2
 }
 
 // ---------------------------------------------------------------------

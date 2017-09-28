@@ -5,11 +5,11 @@ import (
 	"log"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
+	"github.com/dustinrohde/ecoscript"
 )
 
 func main() {
-	mapfile, err := ParseMapfile("examples/Mapfile")
+	mapfile, err := ecoscript.ParseMapfile("examples/Mapfile")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -21,12 +21,4 @@ func main() {
 		world.Tick()
 		time.Sleep(500 * time.Millisecond)
 	}
-}
-
-func show(s ...interface{}) {
-	spew.Dump(fmt.Sprint(s...))
-}
-
-func showf(format string, a ...interface{}) {
-	spew.Dump(fmt.Sprintf(format, a...))
 }

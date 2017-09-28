@@ -1,4 +1,4 @@
-package main
+package ecoscript
 
 type Activity struct {
 	ticks       int
