@@ -17,13 +17,13 @@ var _ = Describe("World", func() {
 
 	BeforeEach(func() {
 		world = NewWorld(3, 3, []string{"ground"})
-		entWalkable = NewEntity("entity1", "1", &Attributes{
+		entWalkable = NewEntity("entity1", "1").AddAttributes(&Attributes{
 			Walkable: true,
 		})
-		entUnwalkable = NewEntity("entity2", "2", &Attributes{
+		entUnwalkable = NewEntity("entity2", "2").AddAttributes(&Attributes{
 			Walkable: false,
 		})
-		ent3 = NewEntity("entity3", "3", new(Attributes))
+		ent3 = NewEntity("entity3", "3")
 	})
 
 	Describe("World#Add()", func() {

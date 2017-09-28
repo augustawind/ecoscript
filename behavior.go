@@ -1,48 +1,58 @@
-package main
+package ecoscript
 
 import (
 	"math/rand"
+
+	"github.com/mitchellh/mapstructure"
+	"gopkg.in/go-playground/validator.v9"
 )
 
 type Behavior interface {
-	Name() string
-	Defaults() Properties
-	Ability(Properties) *Ability
-	Execute(*Ability, *World, *Entity, Vector) (delay int, exec func())
+	Define(Properties) Behavior
+	Execute(*World, *Entity, Vector) (delay int, exec func())
 }
 
 type Properties map[string]interface{}
+
+var behaviorValidator = validator.New()
+
+func DefineBehavior(behavior Behavior, properties Properties) Behavior {
+	var err error
+
+	// Set custom properties.
+	err = mapstructure.Decode(behavior, properties)
+	Guard(err)
+
+	// Validate Behavior.
+	err = behaviorValidator.Struct(behavior)
+	Guard(err)
+
+	return behavior
+}
 
 // ---------------------------------------------------------------------
 // Behavior: Grow
 
 // Grow increases the subject's energy by its growth rate.
-type Grow struct{}
-
-func (bhv *Grow) Name() string {
-	return "grow"
+type Grow struct {
+	Rate int `mapstructure:"rate";validate:"min=1,max=10"`
 }
 
-func (bhv *Grow) Defaults() Properties {
-	return Properties{
-		"rate": 5,
-	}
+func (b *Grow) Define(props Properties) Behavior {
+	b.Rate = 5
+	return DefineBehavior(b, props)
 }
 
-func (bhv *Grow) Ability(props Properties) *Ability {
-	return NewAbility(bhv, props)
-}
-
-func (bhv *Grow) Execute(abl *Ability, wld *World, ent *Entity, vec Vector) (delay int, exec func()) {
+func (b *Grow) Execute(wld *World, ent *Entity, vec Vector) (delay int, exec func()) {
 	delay = 10
 	exec = func() {
-		ent.Transfer(abl.rateToEnergy())
+		ent.Transfer(b.rateToEnergy())
 	}
 	return
 }
 
-func (abl *Ability) rateToEnergy() int {
-	return abl.Get("rate").(int) * 2
+func (b *Grow) rateToEnergy() int {
+	return b.Rate * 2
 }
 
 // ---------------------------------------------------------------------
@@ -50,23 +60,16 @@ func (abl *Ability) rateToEnergy() int {
 
 // Consume attempts to consume an adjacent entity. If successful, the subject
 // gains energy from the consumed entity.
-type Consume struct{}
-
-func (bhv *Consume) Name() string {
-	return "eat"
+type Consume struct {
+	Diet []Trait `mapstructure:"diet"`
 }
 
-func (bhv *Consume) Defaults() Properties {
-	return Properties{
-		"diet": make([]Trait, 0),
-	}
+func (b *Consume) Define(props Properties) Behavior {
+	b.Diet = make([]Trait, 0)
+	return DefineBehavior(b, props)
 }
 
-func (bhv *Consume) Ability(props Properties) *Ability {
-	return NewAbility(bhv, props)
-}
-
-func (bhv *Consume) Execute(abl *Ability, wld *World, ent *Entity, vec Vector) (delay int, exec func()) {
+func (b *Consume) Execute(wld *World, ent *Entity, vec Vector) (delay int, exec func()) {
 	vectors := wld.View(vec, 1)
 
 	for i := range vectors {
@@ -79,10 +82,10 @@ func (bhv *Consume) Execute(abl *Ability, wld *World, ent *Entity, vec Vector) (
 		ents := cell.Shuffled()
 		for j := range ents {
 			entity := ents[j]
-			if bhv.isEdible(abl, ent) {
+			if b.isEdible(ent) {
 				execDestroy, ok := wld.Destroy(entity, vec)
 				if ok {
-					energy := bhv.biomassToEnergy(entity.Biomass())
+					energy := b.biomassToEnergy(entity.Biomass())
 					delay = 15
 					exec = func() {
 						execDestroy()
@@ -96,10 +99,10 @@ func (bhv *Consume) Execute(abl *Ability, wld *World, ent *Entity, vec Vector) (
 	return
 }
 
-func (bhv *Consume) isEdible(abl *Ability, ent *Entity) bool {
+func (b *Consume) isEdible(ent *Entity) bool {
 	for i := range ent.Traits {
 		trait := ent.Traits[i]
-		for _, subjectClass := range bhv.diet(abl) {
+		for _, subjectClass := range b.Diet {
 			if trait == subjectClass {
 				return true
 			}
@@ -108,41 +111,34 @@ func (bhv *Consume) isEdible(abl *Ability, ent *Entity) bool {
 	return false
 }
 
-func (bhv *Consume) diet(abl *Ability) []Trait {
-	return abl.Get("diet").([]Trait)
-}
-
-func (bhv *Consume) biomassToEnergy(biomass int) int {
+func (b *Consume) biomassToEnergy(biomass int) int {
 	return -biomass
 }
 
 // ---------------------------------------------------------------------
 // Behavior: Move
 
-type Move struct{}
-
-func (bhv *Move) Name() string {
-	return "move"
+type Move struct {
+	Dir        Vector  `mapstructure:"dir"`
+	Delay      int     `mapstructure:"speed";validate:"min=1,max=30"`
+	MoveRate   float32 `mapstructure:"moveRate";validate:"min=0,max=1"`
+	SwitchRate float32 `mapstructure:"switchRate";validate:"min=0,max=1"`
 }
 
-func (bhv *Move) Defaults() Properties {
-	speed := 1
-	return Properties{
-		"delta":  randomDelta(speed),
-		"speed":  speed,
-		"effort": 5,
-	}
+func (b *Move) Define(props Properties) Behavior {
+	b.Dir = b.randomDir()
+	b.Delay = 10
+	b.MoveRate = 1
+	b.SwitchRate = 1
+	return DefineBehavior(b, props)
 }
 
-func (bhv *Move) Ability(props Properties) *Ability {
-	return NewAbility(bhv, props)
-}
-
-func (bhv *Move) Execute(abl *Ability, wld *World, ent *Entity, vec Vector) (delay int, exec func()) {
-	dest := vec.Plus(abl.Get("delta").(Vector))
+func (b *Move) Execute(wld *World, ent *Entity, vec Vector) (delay int, exec func()) {
+	// TODO: totally redo this to match spec
+	dest := vec.Plus(b.Dir)
 
 	if !wld.Walkable(dest) {
-		dest = wld.RandWalkable(vec, abl.Get("speed").(int))
+		dest = wld.RandWalkable(vec, 1)
 		if !wld.Walkable(dest) {
 			return
 		}
@@ -150,20 +146,16 @@ func (bhv *Move) Execute(abl *Ability, wld *World, ent *Entity, vec Vector) (del
 
 	delay = 10
 	exec = func() {
-		abl.Set("delta", dest.Minus(vec))
+		b.Dir = dest.Minus(vec)
 		wld.Move(ent, vec, dest)
-		ent.Transfer(abl.Get("effort").(int))
+		ent.Transfer(10)
 	}
 	return
 }
 
-func (bhv *Move) randomizeDelta(abl *Ability) {
-	abl.Set("delta", randomDelta(abl.Get("speed").(int)))
-}
-
-func randomDelta(speed int) Vector {
+func (b *Move) randomDir() Vector {
 	i := rand.Intn(len(directions))
-	return directions[i].Plus(Vec2D(speed, speed))
+	return directions[i]
 }
 
 var directions = []Vector{
@@ -175,24 +167,4 @@ var directions = []Vector{
 	Vec2D(-1, 1),
 	Vec2D(-1, 0),
 	Vec2D(-1, -1),
-}
-
-// ---------------------------------------------------------------------
-// Behavior: Wander(Move)
-
-type Wander struct {
-	*Move
-}
-
-func (bhv *Wander) Name() string {
-	return "wander"
-}
-
-func (bhv *Wander) Ability(props Properties) *Ability {
-	return NewAbility(bhv, props)
-}
-
-func (bhv *Wander) Execute(abl *Ability, wld *World, ent *Entity, vec Vector) (delay int, exec func()) {
-	bhv.randomizeDelta(abl)
-	return bhv.Move.Execute(abl, wld, ent, vec)
 }
